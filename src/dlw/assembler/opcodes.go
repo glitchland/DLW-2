@@ -2,6 +2,7 @@ package asm
 
 import (
   "fmt"
+  s "dlw/shared" 
 )
 
 // bit manipulation functions, using the leftmost bit as the zeroth bit
@@ -24,19 +25,19 @@ func unsetBit(input *uint16, offset uint8) {
 func setInstructionOpcodeBits(instruction uint64, bytecode *uint16) {
 
 	switch instruction {
-	case ADD:
+	case s.ADD:
 		// ADD is 000, so nothing to do
-	case SUB:
+	case s.SUB:
 		// SUB is 001, bit 3 index from 0
 		setBit(bytecode, 3)
-	case LOAD:
+	case s.LOAD:
 		// LOAD is 010, bits index from 0
 		setBit(bytecode, 2)		
-	case STORE:
+	case s.STORE:
 		// STORE is 011
 		setBit(bytecode, 2)	
 		setBit(bytecode, 3)	
-	case JUMP:
+	case s.JUMP:
 		// JUMP is 100
 		setBit(bytecode, 1)			
 	default:
@@ -49,15 +50,15 @@ func setInstructionOpcodeBits(instruction uint64, bytecode *uint16) {
 func setRegisterOpcodeBits(reg uint8, bytecode *uint16, offset uint8) {
 
 	switch reg {
-	case A:
+	case s.A:
 		// A is 0,0 no action required
-	case B:
+	case s.B:
 		// B is 0,1
 		setBit(bytecode, offset+1)
-	case C:
+	case s.C:
 		// C is 1,0
 		setBit(bytecode, offset)
-	case D:
+	case s.D:
 		// D is 1,1
 		setBit(bytecode, offset)
 		setBit(bytecode, offset+1)
@@ -146,14 +147,14 @@ func immediateArithmeticByteCode(src1 *Argument, src2 *Argument, dest *Argument,
 */
 func getLoadByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string, lineNumber uint8) error {
   	if ( !(src.IsDereference || src.IsAddress ) && !dest.IsRegister ) {
-		return &syntaxError{"load must have the form: load #deref/mem, register", asm, lineNumber}
+		return &s.SyntaxError{"load must have the form: load #deref/mem, register", asm, lineNumber}
 	}
 
 	*bytecode = uint16(0)
 
 	// set the instruction bits
 	// bits 1, 2, 3
-	setInstructionOpcodeBits(LOAD, bytecode)
+	setInstructionOpcodeBits(s.LOAD, bytecode)
 
 	// source is #ADDRESS
 	// mode = 1 AND source REGISTER = 00 indicates this form
@@ -166,8 +167,8 @@ func getLoadByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string
 	// source is #(REGISTER + OFFSET)
 	// mode = 1 and source REGISTER != 00 indicates this form
 	if (src.IsDereference) {
-		if (src.BaseRegister == A) {
-			return &syntaxError{"A register is not legal for load #(REGISTER + OFFSET) form", asm, lineNumber}
+		if (src.BaseRegister == s.A) {
+			return &s.SyntaxError{"A register is not legal for load #(REGISTER + OFFSET) form", asm, lineNumber}
 		}
 		setImmediateOpcodeBits(src.Offset, bytecode)
 		// set the register parts 
@@ -183,6 +184,7 @@ func getLoadByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string
 }
 
 /* store needs a reg for first arg, deref for second
+   TODO: This needs immediate for first arg too
    ------------------------------------------------------------------------
    STORE REG, (#REG || #(REG + OFFSET || #Memory)
    A 00
@@ -197,14 +199,14 @@ func getLoadByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string
 */
 func getStoreByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string, lineNumber uint8) error {
 	if ( !src.IsRegister && !(dest.IsDereference || dest.IsAddress) ) {
-		return &syntaxError{"store must have the form: store register, #deref/mem", asm, lineNumber}
+		return &s.SyntaxError{"store must have the form: store register, #deref/mem", asm, lineNumber}
 	}
     
 	*bytecode = uint16(0)
 
 	// set the instruction bits
 	// bits 1, 2, 3
-	setInstructionOpcodeBits(STORE, bytecode)
+	setInstructionOpcodeBits(s.STORE, bytecode)
 
     // set the source register
     // bits 4, 5
@@ -221,8 +223,8 @@ func getStoreByteCode(src *Argument, dest *Argument, bytecode *uint16, asm strin
 	// dest is #(REGISTER + OFFSET)
 	// mode = 1 AND dest REGISTER != 00 indicates this form
 	if (dest.IsDereference) {
-		if (dest.BaseRegister == A) {
-			return &syntaxError{"A register is not legal for store #(REGISTER + OFFSET) form", asm, lineNumber}
+		if (dest.BaseRegister == s.A) {
+			return &s.SyntaxError{"A register is not legal for store #(REGISTER + OFFSET) form", asm, lineNumber}
 		}
 		// set the address portion of the destination
 		setImmediateOpcodeBits(dest.Offset, bytecode)
@@ -250,14 +252,14 @@ func getStoreByteCode(src *Argument, dest *Argument, bytecode *uint16, asm strin
 func getJumpByteCode(dest *Argument, bytecode *uint16, asm string, lineNumber uint8) error {
 	if ( !(dest.IsDereference || dest.IsLabel || dest.IsImmediate) ) {
 		eS := "jump must have the form: jump #reg, or jump #(reg + offset), or jump label, or jump #immediate"
-		return &syntaxError{eS, asm, lineNumber}
+		return &s.SyntaxError{eS, asm, lineNumber}
 	}
 
 	*bytecode = uint16(0)
 
 	// set the instruction bits
 	// bits 1, 2, 3
-	setInstructionOpcodeBits(JUMP, bytecode)
+	setInstructionOpcodeBits(s.JUMP, bytecode)
 
 	// mode 0
 	// if this is a label type store the offset in the 8-bit dest address

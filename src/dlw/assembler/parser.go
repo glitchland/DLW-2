@@ -2,6 +2,7 @@ package asm
 
 import (
 	"bufio"
+	s "dlw/shared"	
 	"fmt"
 	"os"
 	"regexp"
@@ -61,16 +62,16 @@ func isRegD(register string) bool {
 func whichReg(register string) uint8 {
 	switch {
 	case isRegA(register):
-		return A
+		return s.A
 	case isRegB(register):
-		return B
+		return s.B
 	case isRegC(register):
-		return C
+		return s.C
 	case isRegD(register):
-		return D
+		return s.D
 	default:
 		fmt.Printf("register is unknown %s.", register) // raise error
-		return X
+		return s.X
 	}
 }
 
@@ -91,7 +92,6 @@ func getBaseAndOffset(a string, t string) (uint8,uint8) {
 	return baseRegister, uint8(offset)
 }
 
-
 func regArg(a *Argument, argStr string) {
 	r := whichReg(argStr)
 	a.MakeRegister(r)
@@ -110,7 +110,6 @@ func derefRegOrAddrArg(a *Argument, argStr string) {
 		a.MakeDereference(baseRegister, 0)
 	}
 }
-
 
 func derefRegAndOffsetArg(a *Argument, argStr string) {
    	var plus = regexp.MustCompile(`\+`)
@@ -236,7 +235,7 @@ func HandleArithmetic(instructionType uint64, lineNumber uint8, asm string) (uin
 	if ( (src1.IsDereference || src1.IsLabel) || 
 		 (src2.IsDereference || src2.IsLabel) ||
 		 (dest.IsDereference || dest.IsLabel) ) {
-      return 0, &syntaxError{"Arithmetic instructions can operate on register or immediate", asm, lineNumber}  	
+      return 0, &s.SyntaxError{"Arithmetic instructions can operate on register or immediate", asm, lineNumber}  	
     }
 
     // generate the bytecode based on the types of arguments
@@ -271,12 +270,12 @@ func HandleMemoryOperation(instructionType uint64, lineNumber uint8, asm string)
 	arg1 := getArgument(arguments[0])
 	arg2 := getArgument(arguments[1])
 
-	if ( instructionType == LOAD ) {
+	if ( instructionType == s.LOAD ) {
 		e := getLoadByteCode(arg1, arg2, &bytecode, asm, lineNumber)
 		return bytecode, e 
 	}
 
-	if ( instructionType == STORE ) {
+	if ( instructionType == s.STORE ) {
 		e := getStoreByteCode(arg1, arg2, &bytecode, asm, lineNumber)
 		return bytecode, e
 	}
@@ -304,11 +303,11 @@ func HandleBranchOperation(branchType uint64, labelOffsets map[string]uint8, cur
     		fmt.Println(arg.ToString())
 		} else {
 			eS := fmt.Sprintf("the label %s does not exist in assembly", arg.Label)
-			return 0, &syntaxError{eS, asm, currentLineNumber}
+			return 0, &s.SyntaxError{eS, asm, currentLineNumber}
 		}
 	}
 
-	if ( branchType == JUMP ) {
+	if ( branchType == s.JUMP ) {
 		e := getJumpByteCode(arg, &bytecode, asm, currentLineNumber)
 		return bytecode, e 
 	}
@@ -380,7 +379,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 
 			// is this an add instruction
 			case add.MatchString(output):
-				if opcode, e := HandleArithmetic(ADD, lineNumber, output); e != nil {
+				if opcode, e := HandleArithmetic(s.ADD, lineNumber, output); e != nil {
 					fmt.Println("Handle add failed:", e)
 				} else {
 					fmt.Println("Handle add worked:", opcode)
@@ -388,7 +387,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				}
 
 			case sub.MatchString(output):
-				if opcode, e := HandleArithmetic(SUB, lineNumber, output); e != nil {
+				if opcode, e := HandleArithmetic(s.SUB, lineNumber, output); e != nil {
 					fmt.Println("HandleSub failed:", e)
 				} else {
 					fmt.Println("Handle sub worked:", opcode)
@@ -396,7 +395,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				}	
 
 			case load.MatchString(output):
-				if opcode, e := HandleMemoryOperation(LOAD, lineNumber, output); e != nil {
+				if opcode, e := HandleMemoryOperation(s.LOAD, lineNumber, output); e != nil {
 					fmt.Println("Handle load failed:", e)
 				} else {
 					fmt.Println("Handle load worked:", opcode)
@@ -404,14 +403,15 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				}
 
 			case store.MatchString(output):
-				if opcode, e := HandleMemoryOperation(STORE, lineNumber, output); e != nil {
+				if opcode, e := HandleMemoryOperation(s.STORE, lineNumber, output); e != nil {
 					fmt.Println("Handle store failed:", e)
 				} else {
 					fmt.Println("Handle store worked:", opcode)
+					results = append(results, opcode)	
 				}
 
 			case jump.MatchString(output):
-				if opcode, e := HandleBranchOperation(JUMP, labelOffsets, lineNumber, output); e != nil {
+				if opcode, e := HandleBranchOperation(s.JUMP, labelOffsets, lineNumber, output); e != nil {
 					fmt.Println("Handle jump failed:", e)
 				} else {
 					fmt.Println("Handle jump worked:", opcode)

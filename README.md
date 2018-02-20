@@ -1,3 +1,10 @@
+TODO: 
+
+- Change store, allow immediate for src otherwise we cannot set up state
+- Change load, allow immediate for src otherwise we cannot set up state
+- Emulate both of these first
+
+
 ``` 
 $ export GOPATH=$(pwd)
 $ go run src/main.go test.asm 

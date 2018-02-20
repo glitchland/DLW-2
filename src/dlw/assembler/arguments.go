@@ -2,6 +2,7 @@ package asm
 
 import (
   "fmt"
+  s "dlw/shared"
 )
 
 ///
@@ -69,13 +70,13 @@ func (a *Argument) MakeImmediate(immediate uint8) {
 
 func (a *Argument) RegIntToStr(register uint8) string {
 	switch {
-	case register == A:
+	case register == s.A:
 		return "A"
-	case register == B:
+	case register == s.B:
 		return "B"
-	case register == C:
+	case register == s.C:
 		return "C"
-	case register == D:
+	case register == s.D:
 		return "D"						
 	default:
 		return fmt.Sprintf("unknown register %d", register)
