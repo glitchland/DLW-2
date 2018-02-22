@@ -1,4 +1,5 @@
-      store 1, #1
+      add A, 20, A
+      store A, #1
       sub A, B, A
       sub D, D, D
       jump LBL1

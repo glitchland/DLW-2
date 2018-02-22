@@ -3,6 +3,7 @@ package emu
 import (
         "fmt"
          s "dlw/shared" 
+         "time"
         )
 
 
@@ -12,6 +13,13 @@ import (
 func hasBit(n uint16, pos uint8) bool {
     val := n & (1 << (15 - pos))
     return (val > 0)
+}
+
+func isModeSet(opcode uint16) bool {
+	if ( hasBit(opcode, 0) ) {
+		return true
+	}
+	return false
 }
 
 func isAdd(opcode uint16) bool {
@@ -51,7 +59,7 @@ func isJump(opcode uint16) bool {
 }
 
 // handlers 
-func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8 ) uint8 {
+func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8) uint8 {
 	switch {
 	case !hasBit(opcode, bitIdxl) && !hasBit(opcode, bitIdxr): //A 00
 		return s.A
@@ -66,6 +74,10 @@ func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8 ) uint8 {
  	}
 }
 
+func getImmediate(opcode uint16) uint8 {
+	return uint8(opcode &  0x7f) 
+}
+
 /*
    A 00
    B 01
@@ -76,13 +88,64 @@ func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8 ) uint8 {
    |----------------------------------------------------------------------|
    | mode | opcode | source   | dest     | 8-bit dest address             |
    +----------------------------------------------------------------------+
+
+   STORE REG, (#REG || #(REG + OFFSET || #Memory)
 */
 func handleStore(c *Cpu) {
 	// is it immediate?
 	//src = constant register -- check bits 4, 5
 	opcode := c.CurrentInstruction()
-	fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
-	fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
+	src := whichReg(opcode, 4, 5)
+
+	if (isModeSet(opcode)) {
+		// immediate type store
+		addr  := getImmediate(opcode)
+		c.StoreImmediate(addr, src)
+	} else {
+		// register type 
+
+	}
+	//fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
+	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
+}
+
+/*
+   ADD SRC1, SRC2, DESTINATION
+   ADD 000
+   A 00
+   B 01
+   C 10
+   D 11
+   +----------------------------------------------------------------------+
+   |0     |1,2,3   |4,5       |6,7       |8,9          | 10,11,12,13,14,15|
+   |----------------------------------------------------------------------|
+   | mode | opcode | source 1 | source 2 | destination | padding          |
+   +----------------------------------------------------------------------+
+*/
+func handleAdd(c *Cpu) {
+	// is it immediate?
+	//src = constant register -- check bits 4, 5
+
+	opcode := c.CurrentInstruction()
+	
+	if (isModeSet(opcode)) {
+		// immediate type add
+		// immediate is not allowed for destination
+		// only the second argument can be immediate
+		src1 := whichReg(opcode, 4, 5)
+		imm  := getImmediate(opcode)
+		dest := whichReg(opcode, 8, 9)
+		c.AddImmediate(src1, imm, dest)
+	} else {
+		// register type add
+		src1 := whichReg(opcode, 4, 5)
+		src2 := whichReg(opcode, 6, 7)
+		dest := whichReg(opcode, 8, 9) 
+		c.AddRegister(src1, src2, dest)
+	}
+
+	//fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
+	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
 }
 
 func Emulate(romData []uint16) {
@@ -91,30 +154,33 @@ func Emulate(romData []uint16) {
    	cpu.Init(romData)
 
 	for {
+			// CPU tick time
+			ticker := time.Tick(time.Second/2)
+			<-ticker
 			// bits 1, 2, 3
 			// 000 add
 			// 001 sub
 			// 010 load
 			// 011 store
 			// 100 jump
-
 			switch {
 			case isAdd(cpu.Instruction):
-				fmt.Printf("Add instruction [%04x]\n", cpu.Instruction)
+				//fmt.Printf("Add instruction [%04x]\n", cpu.Instruction)
+				handleAdd(cpu)
 			case isSub(cpu.Instruction):
-				fmt.Printf("Sub instruction [%04x]\n", cpu.Instruction)
+				//fmt.Printf("Sub instruction [%04x]\n", cpu.Instruction)
 			case isLoad(cpu.Instruction):
-				fmt.Printf("Load instruction [%04x]\n", cpu.Instruction)
+				//fmt.Printf("Load instruction [%04x]\n", cpu.Instruction)
 			case isStore(cpu.Instruction):
-				fmt.Printf("Store instruction [%04x]\n", cpu.Instruction)
+				//fmt.Printf("Store instruction [%04x]\n", cpu.Instruction)
 				handleStore(cpu)
 			case isJump(cpu.Instruction):
-				fmt.Printf("Jump instruction [%04x]\n", cpu.Instruction)
+				//fmt.Printf("Jump instruction [%04x]\n", cpu.Instruction)
 			default:
 				fmt.Printf("instruction is unknown %04x.", cpu.Instruction) // raise error
 			}
 
-			fmt.Printf("[OPCODE] %04x -> [PC] %02x\n", cpu.Instruction, cpu.PC)
+			//fmt.Printf("[OPCODE] %04x -> [PC] %02x\n", cpu.Instruction, cpu.PC)
 		    cpu.NextInstruction()
 		    if (cpu.IsHalted()) {
 		    	fmt.Println("CPU Halted")

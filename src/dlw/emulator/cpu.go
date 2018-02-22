@@ -2,6 +2,7 @@ package emu
 
 import (
         "fmt"
+  		s "dlw/shared"         
         )
 
 ///
@@ -35,6 +36,52 @@ func (c *Cpu) NextInstruction() {
 	if (c.PC >= c.mem.RomTop) {
 		c.HaltCpu()
 	}	
+}
+
+func (c *Cpu) readReg(r uint8) uint8 {
+	switch {
+	case r == s.A:
+		return c.A
+	case r == s.B:
+		return c.B
+	case r == s.C:
+		return c.C
+	case r == s.D:
+		return c.D				
+ 	default:
+ 		panic("Unknown register") // XXX Handle Errors
+ 	}
+}
+
+func (c *Cpu) writeReg(r uint8, v uint8) {
+	switch {
+	case r == s.A:
+		c.A = v
+	case r == s.B:
+		c.B = v
+	case r == s.C:
+		c.C = v
+	case r == s.D:
+		c.D = v			
+ 	default:
+ 		panic("Unknown register") // XXX Handle Errors
+ 	}
+}
+
+func (c *Cpu) StoreImmediate(addr uint8, r uint8) {
+	v := c.readReg(r)
+	c.mem.SetRamByteAt(addr, v) // XXX reg contents are uint16
+}
+
+
+func (c *Cpu) AddImmediate (src1 uint8, imm uint8, dest uint8) {
+	v := c.readReg(src1) + imm 
+	c.writeReg(dest, v)
+}
+
+func (c *Cpu) AddRegister (src1 uint8, src2 uint8, dest uint8) {
+	v := c.readReg(src1) + c.readReg(src2)
+	c.writeReg(dest, v)
 }
 
 func (c *Cpu) CurrentInstruction() uint16 {
@@ -78,20 +125,14 @@ func (c *Cpu) HaltCpu () {
 }
 
 func (c *Cpu) PrintState() {
-	i := 0
-	b := uint16(0)
-	s := ""
-	s += fmt.Sprintf("Registers: \n")
-	s += fmt.Sprintf("A: %v B: %v C: %v D: %v \n", c.A, c.B, c.C, c.D)
-	s += fmt.Sprintf("PC: %v \n", c.PC)
-	s += fmt.Sprintf("Memory:\n")
-	fmt.Println(len(c.mem.Ram))
-	for _, b = range c.mem.Ram {
-		i++	
-        s += fmt.Sprintf("%04x ", b)
-		if (i % 8 == 0) {
-			s += fmt.Sprintf("\n")
-		}
-	}
-	fmt.Println(s)
+	fmt.Printf("\033[0;0H")
+	fmt.Printf("                                                                                                         \n")
+	fmt.Printf("                                                                                                         \n")		
+	fmt.Printf("CPU State:                                                    \n")
+	fmt.Printf("-----------------------\n")	
+	fmt.Printf("A:\t%02x B:\t%02x \nC:\t%02x D:\t%02x\n", c.A, c.B, c.C, c.D)
+	fmt.Printf("PC:\t%02x \n", c.PC)
+	fmt.Printf("Ins:[%b]\n", c.CurrentInstruction())
+	fmt.Printf("-----------------------\n")
+	c.mem.PrintRam()
 }

@@ -98,25 +98,17 @@ func registerArithmeticByteCode(src1 *Argument, src2 *Argument, dest *Argument, 
 //|0   |1|2|3 |4|5   |6|7 |8|9|10|11|12|13|16|15|
 //|mode|opcode|source|dest|8-bit immediate      |
 func immediateArithmeticByteCode(src1 *Argument, src2 *Argument, dest *Argument, bytecode *uint16) {
-    var handledImmediate = false
 
-    // which argument is immediate?
+    // Only the second argument can be immediate
     if (src1.IsImmediate) {
-    	handledImmediate = true 
-		setImmediateOpcodeBits(src1.ImmediateInt, bytecode)
+    	panic("Error, only the second argument can be immediate") // TODO: handle the error here
     } else {
 		// offset 4 :: bit 4, 5 (src1)
 		setRegisterOpcodeBits(src1.Register, bytecode, 4)
     }
 
     if (src2.IsImmediate) {
-    	if (handledImmediate) {
-    		// XXX Error
-    		fmt.Println("Error, only one immediate value allowed")
-    	} else {
-    		handledImmediate = true
-			setImmediateOpcodeBits(src2.ImmediateInt, bytecode)
-    	}
+		setImmediateOpcodeBits(src2.ImmediateInt, bytecode)
     } else {
     	// offset 6 :: bit 6,7 (src2)
 		setRegisterOpcodeBits(src2.Register, bytecode, 6)
@@ -124,7 +116,7 @@ func immediateArithmeticByteCode(src1 *Argument, src2 *Argument, dest *Argument,
 
     if (dest.IsImmediate) {
     	// XXX Error
-    	fmt.Println("Immediate is not allowed for destination")
+    	panic("Immediate is not allowed for destination")
     } else {
 		// offset 8 :: bit 8,9 (dest)
 		setRegisterOpcodeBits(dest.Register, bytecode, 8)
@@ -184,7 +176,7 @@ func getLoadByteCode(src *Argument, dest *Argument, bytecode *uint16, asm string
 }
 
 /* store needs a reg for first arg, deref for second
-   TODO: This needs immediate for first arg too
+   
    ------------------------------------------------------------------------
    STORE REG, (#REG || #(REG + OFFSET || #Memory)
    A 00
