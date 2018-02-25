@@ -10,41 +10,36 @@ import (
 // check the opcode bits and pass to the correct handler
 // arithmetic, memory, 
 
-func hasBit(n uint16, pos uint8) bool {
-    val := n & (1 << (15 - pos))
-    return (val > 0)
-}
-
 func isModeSet(opcode uint16) bool {
-	if ( hasBit(opcode, 0) ) {
+	if ( s.IsBitSet(opcode, 0) ) {
 		return true
 	}
 	return false
 }
 
 func isAdd(opcode uint16) bool {
-	if (!hasBit(opcode, 1) && !hasBit(opcode, 2) && !hasBit(opcode, 3) ) {
+	if (!s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
 		return true
 	}
 	return false
 }
 
 func isSub(opcode uint16) bool {
-	if (!hasBit(opcode, 1) && !hasBit(opcode, 2) && hasBit(opcode, 3) ) {
+	if (!s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) ) {
 		return true
 	}
 	return false
 }
 
 func isLoad(opcode uint16) bool {
-	if (!hasBit(opcode, 1) && hasBit(opcode, 2) && !hasBit(opcode, 3) ) {
+	if (!s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
 		return true
 	}
 	return false
 }
 
 func isStore(opcode uint16) bool {
-	if (!hasBit(opcode, 1) && hasBit(opcode, 2) && hasBit(opcode, 3) ) {
+	if (!s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) ) {
 		return true
 	}
 	return false
@@ -52,7 +47,7 @@ func isStore(opcode uint16) bool {
 
 // 100
 func isJump(opcode uint16) bool {
-	if (hasBit(opcode, 1) && !hasBit(opcode, 2) && !hasBit(opcode, 3) ) {
+	if (s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
 		return true
 	}
 	return false
@@ -61,13 +56,13 @@ func isJump(opcode uint16) bool {
 // handlers 
 func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8) uint8 {
 	switch {
-	case !hasBit(opcode, bitIdxl) && !hasBit(opcode, bitIdxr): //A 00
+	case !s.IsBitSet(opcode, bitIdxl) && !s.IsBitSet(opcode, bitIdxr): //A 00
 		return s.A
-	case !hasBit(opcode, bitIdxl) && hasBit(opcode, bitIdxr):  //B 01 
+	case !s.IsBitSet(opcode, bitIdxl) && s.IsBitSet(opcode, bitIdxr):  //B 01 
 		return s.B
- 	case hasBit(opcode, bitIdxl) && !hasBit(opcode, bitIdxr):  //C 10
+ 	case s.IsBitSet(opcode, bitIdxl) && !s.IsBitSet(opcode, bitIdxr):  //C 10
  		return s.C
- 	case hasBit(opcode, bitIdxl) &&  hasBit(opcode, bitIdxr):  //D 11
+ 	case s.IsBitSet(opcode, bitIdxl) &&  s.IsBitSet(opcode, bitIdxr):  //D 11
  		return s.D
  	default:
  		return s.X
@@ -148,6 +143,31 @@ func handleAdd(c *Cpu) {
 	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
 }
 
+func handleJump(c *Cpu) {
+	opcode := c.CurrentInstruction()
+	imm  := getImmediate(opcode)
+
+	if (isModeSet(opcode)) {
+
+		// if the top bit on the source register is set
+		// then this is an #ADDRESS type.
+		if (s.IsBitSet(opcode, 4)) {
+			c.BranchAddress(imm)
+		} else {
+			// otherwise its a relative jump
+			c.BranchRelative(imm)
+		}
+
+	} else {
+
+		// this is a #REGISTER + IMMEDIATE type
+		// bits 6,7 is register portion
+		baseReg := whichReg(opcode, 8, 9)
+		c.BranchArithmetic(baseReg, imm)
+
+	}
+}
+
 func Emulate(romData []uint16) {
 
 	cpu := new(Cpu)
@@ -176,12 +196,14 @@ func Emulate(romData []uint16) {
 				handleStore(cpu)
 			case isJump(cpu.Instruction):
 				//fmt.Printf("Jump instruction [%04x]\n", cpu.Instruction)
+				handleJump(cpu)
 			default:
 				fmt.Printf("instruction is unknown %04x.", cpu.Instruction) // raise error
 			}
 
+			cpu.Cycle()
+
 			//fmt.Printf("[OPCODE] %04x -> [PC] %02x\n", cpu.Instruction, cpu.PC)
-		    cpu.NextInstruction()
 		    if (cpu.IsHalted()) {
 		    	fmt.Println("CPU Halted")
 		    	break

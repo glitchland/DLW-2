@@ -5,19 +5,6 @@ import (
   s "dlw/shared" 
 )
 
-// bit manipulation functions, using the leftmost bit as the zeroth bit
-func flipBit(input *uint16, offset uint8) {
-	*input ^= (1 << (15 - offset))
-}
-
-func setBit(input *uint16, offset uint8) {
-	*input |= (1 << (15 - offset))
-}
-
-func unsetBit(input *uint16, offset uint8) {
-	*input &^= (1 << (15 - offset))
-}
-
 // There can only be one immediate
 // these instructions cannot have a dereference type, it has to be register
 // or immediate
@@ -29,17 +16,17 @@ func setInstructionOpcodeBits(instruction uint64, bytecode *uint16) {
 		// ADD is 000, so nothing to do
 	case s.SUB:
 		// SUB is 001, bit 3 index from 0
-		setBit(bytecode, 3)
+		s.SetBit(bytecode, 3)
 	case s.LOAD:
 		// LOAD is 010, bits index from 0
-		setBit(bytecode, 2)		
+		s.SetBit(bytecode, 2)		
 	case s.STORE:
 		// STORE is 011
-		setBit(bytecode, 2)	
-		setBit(bytecode, 3)	
+		s.SetBit(bytecode, 2)	
+		s.SetBit(bytecode, 3)	
 	case s.JUMP:
 		// JUMP is 100
-		setBit(bytecode, 1)			
+		s.SetBit(bytecode, 1)			
 	default:
 		fmt.Printf("unknown instruction") // raise error
 	}  
@@ -54,14 +41,14 @@ func setRegisterOpcodeBits(reg uint8, bytecode *uint16, offset uint8) {
 		// A is 0,0 no action required
 	case s.B:
 		// B is 0,1
-		setBit(bytecode, offset+1)
+		s.SetBit(bytecode, offset+1)
 	case s.C:
 		// C is 1,0
-		setBit(bytecode, offset)
+		s.SetBit(bytecode, offset)
 	case s.D:
 		// D is 1,1
-		setBit(bytecode, offset)
-		setBit(bytecode, offset+1)
+		s.SetBit(bytecode, offset)
+		s.SetBit(bytecode, offset+1)
 	default:
 		fmt.Printf("unknown register") // raise error
 	}  
@@ -77,7 +64,7 @@ func setImmediateOpcodeBits(immediateValue uint8 , bytecode *uint16) {
 	*bytecode |= ei 
 
 	// set the top bit to indicate immediate
-	setBit(bytecode, 0)
+	s.SetBit(bytecode, 0)
 }
 
 // registerType
@@ -254,22 +241,6 @@ func getJumpByteCode(dest *Argument, bytecode *uint16, asm string, lineNumber ui
 	setInstructionOpcodeBits(s.JUMP, bytecode)
 
 	// mode 0
-	// if this is a label type store the offset in the 8-bit dest address
-	if(dest.IsLabel) {
-		setImmediateOpcodeBits(uint8(dest.LabelOffset), bytecode)	
-		unsetBit(bytecode, 0) // unset the top bit set by the last function		
-	}
-
-	// mode 0
-	// if this is an immediate type store the address in the 8-bit dest
-	if(dest.IsImmediate) {
-		setImmediateOpcodeBits(dest.ImmediateInt, bytecode)	
-		unsetBit(bytecode, 0) // unset the top bit set by the last function	
-		setBit(bytecode, 4)   // set the top bit on the source register 
-		                      // to identify immediate			
-	}
-
-	// mode 1
 	// if this is a #reg, use dest field + 0 as 8-bit offset
 	// if this is a #reg + offset, use dest field + 8-bit offset address
 	if(dest.IsDereference) {
@@ -278,6 +249,20 @@ func getJumpByteCode(dest *Argument, bytecode *uint16, asm string, lineNumber ui
 		// set the register portion of the destination 
 		// bits 6,7
 		setRegisterOpcodeBits(dest.BaseRegister, bytecode, 6)
+	}
+
+	// mode 1
+	// if this is a label type store the offset in the 8-bit dest address
+	if(dest.IsLabel) {
+		setImmediateOpcodeBits(uint8(dest.LabelOffset), bytecode)	
+	}
+
+	// mode 1
+	// if this is an immediate type store the address in the 8-bit dest
+	if(dest.IsImmediate) {
+		setImmediateOpcodeBits(dest.ImmediateInt, bytecode)	
+		s.SetBit(bytecode, 4)   // set the top bit on the source register 
+		                        // to identify immediate			
 	}
 
 	return nil

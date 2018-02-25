@@ -14,10 +14,18 @@ type Cpu struct {
 	C       uint8
 	D       uint8
 	PC      uint8
+	PCBranchMod bool // has the PC been modified via branch
+	PSW     uint16
 	Instruction uint16	
 	mem     Memory
 	halted  bool
 }
+
+const (
+	OverflowFlagBitIndex = 0
+	SignFlagBitIndex     = 1
+	ZeroFlagBitIndex     = 2
+)
 
 // TODO, set the top of the rom
 // also set the end insruction in the code after loading
@@ -30,13 +38,38 @@ func (c *Cpu) Init(romData []uint16) {
 	c.halted = false
 }
 
-func (c *Cpu) NextInstruction() {
-	c.IncPc()
-	c.Instruction = c.mem.GetRomWordAt(c.PC)
-	if (c.PC >= c.mem.RomTop) {
-		c.HaltCpu()
-	}	
+/*
+  These Processor Status Word methods should be private.
+ */
+
+//set sign flag
+func (c *Cpu) setSignFlag() {
+	s.SetBit(&c.PSW, SignFlagBitIndex)
 }
+
+func (c *Cpu) unsetSignFlag() {
+	s.UnsetBit(&c.PSW, SignFlagBitIndex)
+}
+
+//set overflow flag
+func (c *Cpu) setOverflowFlag() {
+	s.SetBit(&c.PSW, OverflowFlagBitIndex)
+}
+
+func (c *Cpu) unsetOverflowFlag() {
+	s.UnsetBit(&c.PSW, OverflowFlagBitIndex)
+}
+
+//set zero flag
+func (c *Cpu) setZeroFlag() {
+	s.SetBit(&c.PSW, ZeroFlagBitIndex)
+}
+
+func (c *Cpu) unsetZeroFlag() {
+	s.UnsetBit(&c.PSW, ZeroFlagBitIndex)
+}
+
+/////////////////////////////////////////  
 
 func (c *Cpu) readReg(r uint8) uint8 {
 	switch {
@@ -84,6 +117,16 @@ func (c *Cpu) AddRegister (src1 uint8, src2 uint8, dest uint8) {
 	c.writeReg(dest, v)
 }
 
+func (c *Cpu) Cycle() {
+	if (c.PCBranchMod) { // go directly to the location of the branch
+		c.LoadInstruction(c.PC)
+		c.unsetBranchedPC()
+	} else {
+		c.IncPc()
+		c.LoadInstruction(c.PC)
+	}
+}
+
 func (c *Cpu) CurrentInstruction() uint16 {
 	return c.Instruction
 }
@@ -92,12 +135,58 @@ func (c *Cpu) LoadInstruction(addr uint8) {
 	c.Instruction = c.mem.GetRomWordAt(addr)
 }
 
+
+func (c *Cpu) setBranchedPC () {
+	c.PCBranchMod = true
+}
+
+func (c *Cpu) unsetBranchedPC () {
+	c.PCBranchMod = false
+}
+
+func (c *Cpu) BranchAddress(a uint8) {
+	c.setBranchedPC()
+	c.SetPc(a)
+}
+
+func (c *Cpu) BranchRelative(v uint8) {
+	c.setBranchedPC()
+	c.AddPc(v)
+}
+
+func (c *Cpu) BranchArithmetic(baseRegister uint8, offset uint8) {
+	c.AdjustPC(baseRegister, offset)
+}
+
 func (c *Cpu) IncPc() {
+	c.PC++
+	if (c.PC >= c.mem.RomTop) {
+		c.HaltCpu()
+	}	
+}
+
+func (c *Cpu) DecPc() {
 	c.PC++
 }
 
 func (c *Cpu) SetPc(v uint8) {
 	c.PC = v 
+}
+
+// this is signed so that we can use negative offsets
+func (c *Cpu) AddPc(v uint8) {
+	twsCmplmnt := ( ( ^v ) + 1 ) 
+
+	if ( (twsCmplmnt & 0x80) > 0 ) { // negative
+		twsCmplmnt := twsCmplmnt & 0x7f
+		c.PC -= twsCmplmnt	
+	} else { // positive
+		c.PC += v 
+	}
+}
+
+func (c *Cpu) AdjustPC(baseRegister uint8, offset uint8) {
+	c.PC = c.readReg(baseRegister) + offset
 }
 
 func (c *Cpu) SetA(v uint8) {
