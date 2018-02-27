@@ -27,11 +27,27 @@ $ go run src/main.go test.asm
 
 # TODO   
 
-- Check if this LOAD and store works properly in the parser and emulator
+- Check if this LOAD and STORE works properly in the parser and emulator
 - Revise the rules around the JUMP instruction and the top bit of the source
   register (and in general clean this up)
 - Implement the status register
 - Write a JUMPZ instruction
+- Handle code comments start and end of line, and relative jumps when there are commented lines
+BUGS:
+- B and D registers broken for ADD
+```
+Branch or Memop has bits 8, 9, 10, 11, 12, 13, 14, 15 (8-bits)
+Arith has bits (10, 11, 12, 13, 14, 15) (6-bits)
+
+Get and set immediate opcode bits assumes 8-bit length. This is why
+Registers A (00) and C (10) work, because they dont have the last bit set.
+And B and D fail, because they have the last bits set
+
+If add or sub is immediate type, then we should move dest up to source2
+so that we can use the full 8-bits of the immediate section. And then 
+handle that difference in the parser and emulator.
+```
+
 
 # Processor Status Word Register (PSW)
 
@@ -236,9 +252,6 @@ counter by the value stored in the immediate portion of the instruction.
    | mode | opcode | source   | dest     | 8-bit dest address             |
    +----------------------------------------------------------------------+
 ```
-
-
-
 
 -----------------------------------------------
 -----------------------------------------------

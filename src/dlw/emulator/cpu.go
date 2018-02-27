@@ -5,6 +5,12 @@ import (
   		s "dlw/shared"         
         )
 
+const (
+	OverflowFlagBitIndex = 0
+	SignFlagBitIndex     = 1
+	ZeroFlagBitIndex     = 2
+)
+
 ///
 /// This represents CPU
 ///
@@ -20,12 +26,6 @@ type Cpu struct {
 	mem     Memory
 	halted  bool
 }
-
-const (
-	OverflowFlagBitIndex = 0
-	SignFlagBitIndex     = 1
-	ZeroFlagBitIndex     = 2
-)
 
 // TODO, set the top of the rom
 // also set the end insruction in the code after loading
@@ -101,12 +101,31 @@ func (c *Cpu) writeReg(r uint8, v uint8) {
  	}
 }
 
-func (c *Cpu) StoreImmediate(addr uint8, r uint8) {
-	v := c.readReg(r)
-	c.mem.SetRamByteAt(addr, v) // XXX reg contents are uint16
+///////////////////////////////////////////////////
+// Store instructions
+///////////////////////////////////////////////////
+
+func (c *Cpu) StoreAtRegReference(refr uint8, rv uint8) {
+	addr := c.readReg(refr)
+	v := c.readReg(rv)
+	c.mem.SetRamByteAt(addr, v)
 }
 
+func (c *Cpu) StoreAtRelative(baser uint8, offset uint8, rv uint8) {
+	base := c.readReg(baser)
+	addr := base + offset
+	v := c.readReg(rv)
+	c.mem.SetRamByteAt(addr, v) 
+}
 
+func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
+	v := c.readReg(rv)
+	c.mem.SetRamByteAt(addr, v)
+}
+
+///////////////////////////////////////////////////
+// Add instructions
+///////////////////////////////////////////////////
 func (c *Cpu) AddImmediate (src1 uint8, imm uint8, dest uint8) {
 	v := c.readReg(src1) + imm 
 	c.writeReg(dest, v)

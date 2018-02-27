@@ -10,13 +10,6 @@ import (
 // check the opcode bits and pass to the correct handler
 // arithmetic, memory, 
 
-func isModeSet(opcode uint16) bool {
-	if ( s.IsBitSet(opcode, 0) ) {
-		return true
-	}
-	return false
-}
-
 func isAdd(opcode uint16) bool {
 	if (!s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
 		return true
@@ -53,26 +46,6 @@ func isJump(opcode uint16) bool {
 	return false
 }
 
-// handlers 
-func whichReg(opcode uint16, bitIdxl uint8, bitIdxr uint8) uint8 {
-	switch {
-	case !s.IsBitSet(opcode, bitIdxl) && !s.IsBitSet(opcode, bitIdxr): //A 00
-		return s.A
-	case !s.IsBitSet(opcode, bitIdxl) && s.IsBitSet(opcode, bitIdxr):  //B 01 
-		return s.B
- 	case s.IsBitSet(opcode, bitIdxl) && !s.IsBitSet(opcode, bitIdxr):  //C 10
- 		return s.C
- 	case s.IsBitSet(opcode, bitIdxl) &&  s.IsBitSet(opcode, bitIdxr):  //D 11
- 		return s.D
- 	default:
- 		return s.X
- 	}
-}
-
-func getImmediate(opcode uint16) uint8 {
-	return uint8(opcode &  0x7f) 
-}
-
 /*
    A 00
    B 01
@@ -90,16 +63,35 @@ func handleStore(c *Cpu) {
 	// is it immediate?
 	//src = constant register -- check bits 4, 5
 	opcode := c.CurrentInstruction()
-	src := whichReg(opcode, 4, 5)
 
-	if (isModeSet(opcode)) {
-		// immediate type store
-		addr  := getImmediate(opcode)
-		c.StoreImmediate(addr, src)
+	src := s.WhichMemOpSrcReg(opcode)
+
+	// is this an immediate type store?
+	if (s.IsModeSet(opcode)) {
+
+		// mode = 1 AND dest REGISTER == 00 (#ADDRESS form)
+		if (s.IsMemOpSrcZero(opcode)) {
+			addr  := s.GetImmediate(opcode)
+			c.StoreAtAddr(addr, src)			
+		} else {
+			// mode = 1 AND dest REGISTER != 00 #(REGISTER + OFFSET) form
+			offset := s.GetImmediate(opcode)
+			base   := s.WhichMemOpDstReg(opcode)
+			c.StoreAtRelative(base, offset, src)
+		}
+
 	} else {
 		// register type 
-
+		reg := s.WhichMemOpDstReg(opcode)
+		c.StoreAtRegReference(reg, src)
 	}
+
+	// dest is #(REGISTER + OFFSET)
+	// mode = 1 AND dest REGISTER != 00 indicates this form
+
+	// dest is #ADDRESS
+	// mode = 1 AND dest REGISTER == 00 indicates this form
+
 	//fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
 	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
 }
@@ -120,34 +112,30 @@ func handleStore(c *Cpu) {
 func handleAdd(c *Cpu) {
 	// is it immediate?
 	//src = constant register -- check bits 4, 5
-
 	opcode := c.CurrentInstruction()
 	
-	if (isModeSet(opcode)) {
+	if (s.IsModeSet(opcode)) {
 		// immediate type add
 		// immediate is not allowed for destination
 		// only the second argument can be immediate
-		src1 := whichReg(opcode, 4, 5)
-		imm  := getImmediate(opcode)
-		dest := whichReg(opcode, 8, 9)
+		src1 := s.WhichArithOpSrc1Reg(opcode)
+		imm  := s.GetImmediate(opcode)
+		dest := s.WhichArithOpDstReg(opcode)
 		c.AddImmediate(src1, imm, dest)
 	} else {
 		// register type add
-		src1 := whichReg(opcode, 4, 5)
-		src2 := whichReg(opcode, 6, 7)
-		dest := whichReg(opcode, 8, 9) 
+		src1 := s.WhichArithOpSrc1Reg(opcode)
+		src2 := s.WhichArithOpSrc2Reg(opcode)
+		dest := s.WhichArithOpDstReg(opcode)
 		c.AddRegister(src1, src2, dest)
 	}
-
-	//fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
-	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
 }
 
 func handleJump(c *Cpu) {
 	opcode := c.CurrentInstruction()
-	imm  := getImmediate(opcode)
+	imm  := s.GetImmediate(opcode)
 
-	if (isModeSet(opcode)) {
+	if (s.IsModeSet(opcode)) {
 
 		// if the top bit on the source register is set
 		// then this is an #ADDRESS type.
@@ -162,7 +150,7 @@ func handleJump(c *Cpu) {
 
 		// this is a #REGISTER + IMMEDIATE type
 		// bits 6,7 is register portion
-		baseReg := whichReg(opcode, 8, 9)
+		baseReg := s.WhichJmpOpDstReg(opcode)
 		c.BranchArithmetic(baseReg, imm)
 
 	}
@@ -202,14 +190,12 @@ func Emulate(romData []uint16) {
 			}
 
 			cpu.Cycle()
+		    cpu.PrintState()
 
-			//fmt.Printf("[OPCODE] %04x -> [PC] %02x\n", cpu.Instruction, cpu.PC)
 		    if (cpu.IsHalted()) {
 		    	fmt.Println("CPU Halted")
 		    	break
 		    }
-		    cpu.PrintState()
-
 	}
 
 }
