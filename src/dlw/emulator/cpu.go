@@ -105,16 +105,16 @@ func (c *Cpu) writeReg(r uint8, v uint8) {
 // Store instructions
 ///////////////////////////////////////////////////
 
-func (c *Cpu) StoreAtRegReference(refr uint8, rv uint8) {
-	addr := c.readReg(refr)
-	v := c.readReg(rv)
+func (c *Cpu) StoreAtRegReference(srcr uint8, dstr uint8) {
+	addr := c.readReg(dstr)
+	v := c.readReg(srcr)
 	c.mem.SetRamByteAt(addr, v)
 }
 
-func (c *Cpu) StoreAtRelative(baser uint8, offset uint8, rv uint8) {
+func (c *Cpu) StoreAtRelative(srcr uint8, baser uint8, offset uint8) {
 	base := c.readReg(baser)
 	addr := base + offset
-	v := c.readReg(rv)
+	v := c.readReg(srcr)
 	c.mem.SetRamByteAt(addr, v) 
 }
 
@@ -133,6 +133,19 @@ func (c *Cpu) AddImmediate (src1 uint8, imm uint8, dest uint8) {
 
 func (c *Cpu) AddRegister (src1 uint8, src2 uint8, dest uint8) {
 	v := c.readReg(src1) + c.readReg(src2)
+	c.writeReg(dest, v)
+}
+
+///////////////////////////////////////////////////
+// Sub instructions
+///////////////////////////////////////////////////
+func (c *Cpu) SubImmediate (src1 uint8, imm uint8, dest uint8) {
+	v := c.readReg(src1) - imm 
+	c.writeReg(dest, v)
+}
+
+func (c *Cpu) SubRegister (src1 uint8, src2 uint8, dest uint8) {
+	v := c.readReg(src1) - c.readReg(src2)
 	c.writeReg(dest, v)
 }
 
@@ -238,8 +251,8 @@ func (c *Cpu) PrintState() {
 	fmt.Printf("                                                                                                         \n")		
 	fmt.Printf("CPU State:                                                    \n")
 	fmt.Printf("-----------------------\n")	
-	fmt.Printf("A:\t%02x B:\t%02x \nC:\t%02x D:\t%02x\n", c.A, c.B, c.C, c.D)
-	fmt.Printf("PC:\t%02x \n", c.PC)
+	fmt.Printf("A:\t%02X B:\t%02X \nC:\t%02X D:\t%02X\n", c.A, c.B, c.C, c.D)
+	fmt.Printf("PC:\t%02X \n", c.PC)
 	fmt.Printf("Ins:[%b]\n", c.CurrentInstruction())
 	fmt.Printf("-----------------------\n")
 	c.mem.PrintRam()

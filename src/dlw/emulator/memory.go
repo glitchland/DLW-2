@@ -5,7 +5,7 @@ import(
 	"fmt"
 )
 
-const AddrLimits = ^uint8(0)
+const AddrLimits = 0x100
 const MaxRom = 1024
 type Memory struct {
 	Rom	[]uint16
@@ -17,9 +17,9 @@ type Memory struct {
 
 func (m *Memory) Init() {
 	m.Rom = make([]uint16, MaxRom) 
-	m.Ram = make([]uint8, AddrLimits) 
+	m.Ram = make([]uint8, AddrLimits)
 	m.RomWriteLocked = false
-	m.MemTop = AddrLimits
+	m.MemTop = AddrLimits - 1
 }
 
 // RAM access - RAM is a series of 8 bit bytes
@@ -71,7 +71,7 @@ func (m *Memory) PrintRam() {
 	s := "RAM:\n"
 	for _, b = range m.Ram {
 		i++	
-        s += fmt.Sprintf("%02x ", b)
+        s += fmt.Sprintf("%02X ", b)
 		if (i % 16 == 0) {
 			s += fmt.Sprintf("\n")
 		}

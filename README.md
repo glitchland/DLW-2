@@ -33,21 +33,6 @@ $ go run src/main.go test.asm
 - Implement the status register
 - Write a JUMPZ instruction
 - Handle code comments start and end of line, and relative jumps when there are commented lines
-BUGS:
-- B and D registers broken for ADD
-```
-Branch or Memop has bits 8, 9, 10, 11, 12, 13, 14, 15 (8-bits)
-Arith has bits (10, 11, 12, 13, 14, 15) (6-bits)
-
-Get and set immediate opcode bits assumes 8-bit length. This is why
-Registers A (00) and C (10) work, because they dont have the last bit set.
-And B and D fail, because they have the last bits set
-
-If add or sub is immediate type, then we should move dest up to source2
-so that we can use the full 8-bits of the immediate section. And then 
-handle that difference in the parser and emulator.
-```
-
 
 # Processor Status Word Register (PSW)
 
@@ -172,13 +157,13 @@ can be all registers
 or can contain immediate, but only as src2 
 A, 1, A
 
-(mode will be set to 1, immediate value will be in bits |8|9|10|11|12|13|16|15|)
+registerType
+|0   |1|2|3 |4|5    |6|7    |8|9 |10|11|12|13|16|15|
+|mode|opcode|source1|source2|dest|                 |
 
-   ADD SRC1, SRC2, DESTINATION
-   A 00
-   B 01
-   C 10
-   D 11
+imediateType
+|1   |1|2|3 |4|5   |6|7     |8|9|10|11|12|13|16|15|
+|mode|opcode|source|dest    |   8-bit immediate   |
 ```
 
 ### SUB

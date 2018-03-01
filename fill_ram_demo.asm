@@ -1,3 +1,6 @@
-LOOP: add C, 1, C
-store C, #C
+LOOP: add B, 1, B
+store B, #C
+store B, #D
+add D, 1, D
+sub C, 1, C
 jump LOOP

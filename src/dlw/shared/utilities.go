@@ -70,7 +70,7 @@ func WhichMemOpSrcReg(opcode uint16) uint8 {
 }
 
 func WhichMemOpDstReg(opcode uint16) uint8 {
-	return whichReg(opcode, MEMOP_SRC_BIT_IDX, MEMOP_SRC_BIT_IDX + 1)	
+	return whichReg(opcode, MEMOP_DST_BIT_IDX, MEMOP_DST_BIT_IDX + 1)	
 }
 
 func WhichArithOpSrc1Reg(opcode uint16) uint8 {
@@ -90,5 +90,5 @@ func WhichJmpOpDstReg(opcode uint16) uint8 {
 }
 
 func GetImmediate(opcode uint16) uint8 {
-	return uint8(opcode &  0x7f) 
+	return uint8(opcode & 0xFF) 
 }

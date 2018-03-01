@@ -63,7 +63,6 @@ func handleStore(c *Cpu) {
 	// is it immediate?
 	//src = constant register -- check bits 4, 5
 	opcode := c.CurrentInstruction()
-
 	src := s.WhichMemOpSrcReg(opcode)
 
 	// is this an immediate type store?
@@ -77,57 +76,66 @@ func handleStore(c *Cpu) {
 			// mode = 1 AND dest REGISTER != 00 #(REGISTER + OFFSET) form
 			offset := s.GetImmediate(opcode)
 			base   := s.WhichMemOpDstReg(opcode)
-			c.StoreAtRelative(base, offset, src)
+			c.StoreAtRelative(src, base, offset)
 		}
 
 	} else {
-		// register type 
-		reg := s.WhichMemOpDstReg(opcode)
-		c.StoreAtRegReference(reg, src)
+		dst := s.WhichMemOpDstReg(opcode)
+		c.StoreAtRegReference(src, dst)
 	}
-
-	// dest is #(REGISTER + OFFSET)
-	// mode = 1 AND dest REGISTER != 00 indicates this form
-
-	// dest is #ADDRESS
-	// mode = 1 AND dest REGISTER == 00 indicates this form
-
-	//fmt.Printf("[Source %s] ", s.Ritos(whichReg(opcode, 4, 5)))
-	//fmt.Printf(" [Dest %s]\n", s.Ritos(whichReg(opcode, 6, 7)))
 }
 
 /*
-   ADD SRC1, SRC2, DESTINATION
-   ADD 000
-   A 00
-   B 01
-   C 10
-   D 11
-   +----------------------------------------------------------------------+
-   |0     |1,2,3   |4,5       |6,7       |8,9          | 10,11,12,13,14,15|
-   |----------------------------------------------------------------------|
-   | mode | opcode | source 1 | source 2 | destination | padding          |
-   +----------------------------------------------------------------------+
+registerType
+|0   |1|2|3 |4|5    |6|7    |8|9 |10|11|12|13|16|15|
+|mode|opcode|source1|source2|dest|                 |
+
+imediateType
+|1   |1|2|3 |4|5   |6|7     |8|9|10|11|12|13|16|15|
+|mode|opcode|source|dest    |   8-bit immediate   |
 */
 func handleAdd(c *Cpu) {
-	// is it immediate?
-	//src = constant register -- check bits 4, 5
+	handleArithmetic(c, s.ADD)
+}
+
+func handleSub(c *Cpu) {
+	handleArithmetic(c, s.SUB)
+}
+
+func handleArithmetic(c *Cpu, opType uint64) {
 	opcode := c.CurrentInstruction()
 	
 	if (s.IsModeSet(opcode)) {
+
 		// immediate type add
-		// immediate is not allowed for destination
-		// only the second argument can be immediate
 		src1 := s.WhichArithOpSrc1Reg(opcode)
-		imm  := s.GetImmediate(opcode)
-		dest := s.WhichArithOpDstReg(opcode)
-		c.AddImmediate(src1, imm, dest)
+		dest := s.WhichArithOpSrc2Reg(opcode) // src2 is dest in this form
+		imm  := s.GetImmediate(opcode)	
+
+		switch opType {
+		case s.ADD:
+			c.AddImmediate(src1, imm, dest)
+		case s.SUB:
+			c.SubImmediate(src1, imm, dest)	
+ 		default:
+ 			panic("Unknown arithmetic instruction type") 
+ 		}
+
 	} else {
+
 		// register type add
 		src1 := s.WhichArithOpSrc1Reg(opcode)
 		src2 := s.WhichArithOpSrc2Reg(opcode)
 		dest := s.WhichArithOpDstReg(opcode)
-		c.AddRegister(src1, src2, dest)
+
+		switch opType {
+		case s.ADD:
+			c.AddRegister(src1, src2, dest)
+		case s.SUB:
+			c.SubRegister(src1, src2, dest)
+ 		default:
+ 			panic("Unknown arithmetic instruction type") 
+ 		}
 	}
 }
 
@@ -163,8 +171,8 @@ func Emulate(romData []uint16) {
 
 	for {
 			// CPU tick time
-			ticker := time.Tick(time.Second/2)
-			<-ticker
+			timer := time.Tick(time.Second/10)
+			<-timer
 			// bits 1, 2, 3
 			// 000 add
 			// 001 sub
@@ -173,17 +181,14 @@ func Emulate(romData []uint16) {
 			// 100 jump
 			switch {
 			case isAdd(cpu.Instruction):
-				//fmt.Printf("Add instruction [%04x]\n", cpu.Instruction)
 				handleAdd(cpu)
 			case isSub(cpu.Instruction):
-				//fmt.Printf("Sub instruction [%04x]\n", cpu.Instruction)
+				handleSub(cpu)
 			case isLoad(cpu.Instruction):
 				//fmt.Printf("Load instruction [%04x]\n", cpu.Instruction)
 			case isStore(cpu.Instruction):
-				//fmt.Printf("Store instruction [%04x]\n", cpu.Instruction)
 				handleStore(cpu)
 			case isJump(cpu.Instruction):
-				//fmt.Printf("Jump instruction [%04x]\n", cpu.Instruction)
 				handleJump(cpu)
 			default:
 				fmt.Printf("instruction is unknown %04x.", cpu.Instruction) // raise error

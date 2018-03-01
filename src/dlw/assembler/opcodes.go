@@ -97,16 +97,14 @@ func immediateArithmeticByteCode(src1 *Argument, src2 *Argument, dest *Argument,
     if (src2.IsImmediate) {
 		setImmediateOpcodeBits(src2.ImmediateInt, bytecode)
     } else {
-    	// offset 6 :: bit 6,7 (src2)
-		setRegisterOpcodeBits(src2.Register, bytecode, 6)
+    	panic("Immediate must be set as the second argument in this form")
     }
 
     if (dest.IsImmediate) {
-    	// XXX Error
-    	panic("Immediate is not allowed for destination")
+    	panic("Error, only the second argument can be immediate")
     } else {
-		// offset 8 :: bit 8,9 (dest)
-		setRegisterOpcodeBits(dest.Register, bytecode, 8)
+		// offset 6 :: bit 6,7 (dest)
+		setRegisterOpcodeBits(dest.Register, bytecode, 6)
     }
 
 }
@@ -209,9 +207,10 @@ func getStoreByteCode(src *Argument, dest *Argument, bytecode *uint16, asm strin
 		setImmediateOpcodeBits(dest.Offset, bytecode)
 		// set the register portion of the destination 
 		// bits 6,7
-		setRegisterOpcodeBits(dest.BaseRegister, bytecode, 6)		
+		setRegisterOpcodeBits(dest.BaseRegister, bytecode, 6)
 	}
 
+	fmt.Printf("|%b|\n", *bytecode)
 	return nil
 }
 
