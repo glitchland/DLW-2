@@ -69,7 +69,7 @@ func handleStore(c *Cpu) {
 	if (s.IsModeSet(opcode)) {
 
 		// mode = 1 AND dest REGISTER == 00 (#ADDRESS form)
-		if (s.IsMemOpSrcZero(opcode)) {
+		if (s.IsMemOpDstZero(opcode)) {
 			addr  := s.GetImmediate(opcode)
 			c.StoreAtAddr(addr, src)			
 		} else {
@@ -82,6 +82,44 @@ func handleStore(c *Cpu) {
 	} else {
 		dst := s.WhichMemOpDstReg(opcode)
 		c.StoreAtRegReference(src, dst)
+	}
+}
+
+/*
+   LOAD (#REG || #(REG + OFFSET) || #MEMORY), REG)
+   A 00
+   B 01
+   C 10
+   D 11
+   +----------------------------------------------------------------------+
+   |0     | 1,2,3  | 4,5      | 6,7      | 8,9,10,11,12,13,14,15          |
+   |----------------------------------------------------------------------|
+   | mode | opcode | source   | dest     | 8-bit source address           |
+   +----------------------------------------------------------------------+
+ */
+func handleLoad(c *Cpu) {
+	//is it immediate?
+	//src = constant register -- check bits 4, 5
+	opcode := c.CurrentInstruction()
+	src := s.WhichMemOpSrcReg(opcode)
+	dst := s.WhichMemOpDstReg(opcode)
+
+	// is this an immediate type store?
+	if (s.IsModeSet(opcode)) {
+
+		// mode = 1 AND src REGISTER == 00 (#ADDRESS form)
+		if (s.IsMemOpSrcZero(opcode)) {
+			addr  := s.GetImmediate(opcode)
+			c.LoadFromAddr(addr, dst) // load from addr into dest			
+		} else {
+			// mode = 1 AND src REGISTER != 00 #(REGISTER + OFFSET) form
+			offset := s.GetImmediate(opcode)
+			base   := s.WhichMemOpDstReg(opcode)
+			c.LoadFromRelative(base, offset, dst)
+		}
+
+	} else {
+		c.LoadFromRegReference(src, dst) // load from src reg into dest
 	}
 }
 
@@ -171,7 +209,7 @@ func Emulate(romData []uint16) {
 
 	for {
 			// CPU tick time
-			timer := time.Tick(time.Second/10)
+			timer := time.Tick(time.Second/100)
 			<-timer
 			// bits 1, 2, 3
 			// 000 add
@@ -185,7 +223,7 @@ func Emulate(romData []uint16) {
 			case isSub(cpu.Instruction):
 				handleSub(cpu)
 			case isLoad(cpu.Instruction):
-				//fmt.Printf("Load instruction [%04x]\n", cpu.Instruction)
+				handleLoad(cpu)
 			case isStore(cpu.Instruction):
 				handleStore(cpu)
 			case isJump(cpu.Instruction):

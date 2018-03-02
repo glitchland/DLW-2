@@ -51,6 +51,10 @@ func (c *Cpu) unsetSignFlag() {
 	s.UnsetBit(&c.PSW, SignFlagBitIndex)
 }
 
+func (c *Cpu) getSignFlag() bool {
+	return s.GetBit(&c.PSW, SignFlagBitIndex)
+}
+
 //set overflow flag
 func (c *Cpu) setOverflowFlag() {
 	s.SetBit(&c.PSW, OverflowFlagBitIndex)
@@ -58,6 +62,10 @@ func (c *Cpu) setOverflowFlag() {
 
 func (c *Cpu) unsetOverflowFlag() {
 	s.UnsetBit(&c.PSW, OverflowFlagBitIndex)
+}
+
+func (c *Cpu) getOverflowFlag() bool {
+	return s.GetBit(&c.PSW, OverflowFlagBitIndex)
 }
 
 //set zero flag
@@ -69,6 +77,9 @@ func (c *Cpu) unsetZeroFlag() {
 	s.UnsetBit(&c.PSW, ZeroFlagBitIndex)
 }
 
+func (c *Cpu) getZeroFlag() bool {
+	return s.GetBit(&c.PSW, ZeroFlagBitIndex)
+}
 /////////////////////////////////////////  
 
 func (c *Cpu) readReg(r uint8) uint8 {
@@ -121,6 +132,28 @@ func (c *Cpu) StoreAtRelative(srcr uint8, baser uint8, offset uint8) {
 func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
 	v := c.readReg(rv)
 	c.mem.SetRamByteAt(addr, v)
+}
+
+///////////////////////////////////////////////////
+// Load instructions
+///////////////////////////////////////////////////
+
+func (c *Cpu) LoadFromRegReference(srcr uint8, dstr uint8) {
+	addr := c.readReg(srcr)
+	v := c.mem.GetRamByteAt(addr)
+	c.writeReg(dstr, v)
+}
+
+func (c *Cpu) LoadFromRelative(baser uint8, offset uint8, dstr uint8) {
+	base := c.readReg(baser)
+	addr := base + offset
+	v := c.mem.GetRamByteAt(addr)	
+	c.writeReg(dstr, v)	
+}
+
+func (c *Cpu) LoadFromAddr(addr uint8, dstr uint8) {
+	v := c.mem.GetRamByteAt(addr)
+	c.writeReg(dstr, v)	
 }
 
 ///////////////////////////////////////////////////
@@ -252,7 +285,9 @@ func (c *Cpu) PrintState() {
 	fmt.Printf("CPU State:                                                    \n")
 	fmt.Printf("-----------------------\n")	
 	fmt.Printf("A:\t%02X B:\t%02X \nC:\t%02X D:\t%02X\n", c.A, c.B, c.C, c.D)
-	fmt.Printf("PC:\t%02X \n", c.PC)
+	fmt.Printf("PC:\t%02X ZF:%s OF:%s SF:%s\n", c.PC, s.BoolToIntStr(c.getZeroFlag()), 
+													  s.BoolToIntStr(c.getOverflowFlag()), 
+													  s.BoolToIntStr(c.getSignFlag()) )
 	fmt.Printf("Ins:[%b]\n", c.CurrentInstruction())
 	fmt.Printf("-----------------------\n")
 	c.mem.PrintRam()

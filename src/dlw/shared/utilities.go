@@ -18,6 +18,21 @@ func SetBit(input *uint16, offset uint8) {
 	*input |= (1 << (15 - offset))
 }
 
+func GetBit(input *uint16, offset uint8) bool {
+	if (IsBitSet(*input, offset)) {
+		return true
+	}
+	return false
+}
+
+func BoolToIntStr(v bool) string {
+	if (v) {
+		return "1"
+	} else {
+		return "0"
+	}
+}
+
 func UnsetBit(input *uint16, offset uint8) {
 	*input &^= (1 << (15 - offset))
 }

@@ -3,4 +3,5 @@ store B, #C
 store B, #D
 add D, 1, D
 sub C, 1, C
+load #C, A
 jump LOOP

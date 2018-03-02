@@ -12,7 +12,7 @@ import (
 
 func isValidRegister(register string) bool {
 
-	var regs = regexp.MustCompile(`(?i)^A|B|C|D`)
+	var regs = regexp.MustCompile(`(?i)\b[ABCD]\b`)
 
 	if regs.MatchString(register) {
 		return true
@@ -26,6 +26,7 @@ func isValidAddress(address string) bool {
 	return false
 }
 
+// remove spaces and tabs
 func normalizeString(input string) string {
 	replacer := strings.NewReplacer(" ", "", "\t", "")
 	return replacer.Replace(input)
@@ -83,7 +84,13 @@ func removeDerefChars(input string) string {
 }
 
 func getBaseAndOffset(a string, t string) (uint8,uint8) {
-	baseAndOffset := strings.Split(a, "+")
+
+	if (t != "-" && t != "+") {
+		panic("Only '-' and '+' are supported.")
+	}
+
+	wsRemoved := normalizeString(a)
+	baseAndOffset := strings.Split(wsRemoved, t)
 	baseRegister := whichReg(baseAndOffset[0])
 	offset, err := strconv.Atoi(baseAndOffset[1])
 	if err != nil {
