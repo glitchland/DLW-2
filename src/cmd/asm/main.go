@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dlw/assembler"
+	"pkg/assembler"
 	"encoding/binary"	
 	"fmt"
 	"os"

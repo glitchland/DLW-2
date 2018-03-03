@@ -2,7 +2,7 @@ package asm
 
 import (
 	"bufio"
-	s "dlw/shared"	
+	s "pkg/shared"	
 	"fmt"
 	"os"
 	"regexp"

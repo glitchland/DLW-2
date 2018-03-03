@@ -2,9 +2,8 @@ package main
 
 import (
         "os"
-        "encoding/binary"
-		//"dlw/common"        
-       	"dlw/emulator"
+        "encoding/binary"     
+       	"pkg/emulator"
         "io"
         )
 

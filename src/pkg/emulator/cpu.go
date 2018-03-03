@@ -2,7 +2,7 @@ package emu
 
 import (
         "fmt"
-  		s "dlw/shared"         
+  		s "pkg/shared"         
         )
 
 const (

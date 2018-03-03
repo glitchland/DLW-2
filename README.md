@@ -1,7 +1,8 @@
 
 ``` 
 $ export GOPATH=$(pwd)
-$ go run src/main.go test.asm 
+$ go run src/cmd/asm/main.go src/examples/fill_ram_demo.asm 
+$ go run src/cmd/emu/main.go 
 ```
 
 ```

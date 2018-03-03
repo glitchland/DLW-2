@@ -2,7 +2,7 @@ package asm
 
 import (
   "fmt"
-  s "dlw/shared" 
+  s "pkg/shared" 
 )
 
 // There can only be one immediate
