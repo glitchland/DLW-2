@@ -1,38 +1,37 @@
 package emu
 
 import (
-        "fmt"
-         s "pkg/shared" 
-         "time"
-        )
-
+	"fmt"
+	s "pkg/shared"
+	"time"
+)
 
 // check the opcode bits and pass to the correct handler
-// arithmetic, memory, 
+// arithmetic, memory,
 
 func isAdd(opcode uint16) bool {
-	if (!s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
+	if !s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
 }
 
 func isSub(opcode uint16) bool {
-	if (!s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) ) {
+	if !s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
 }
 
 func isLoad(opcode uint16) bool {
-	if (!s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
+	if !s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
 }
 
 func isStore(opcode uint16) bool {
-	if (!s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) ) {
+	if !s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
@@ -40,7 +39,7 @@ func isStore(opcode uint16) bool {
 
 // 100
 func isJump(opcode uint16) bool {
-	if (s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) ) {
+	if s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
@@ -66,16 +65,16 @@ func handleStore(c *Cpu) {
 	src := s.WhichMemOpSrcReg(opcode)
 
 	// is this an immediate type store?
-	if (s.IsModeSet(opcode)) {
+	if s.IsModeSet(opcode) {
 
 		// mode = 1 AND dest REGISTER == 00 (#ADDRESS form)
-		if (s.IsMemOpDstZero(opcode)) {
-			addr  := s.GetImmediate(opcode)
-			c.StoreAtAddr(addr, src)			
+		if s.IsMemOpDstZero(opcode) {
+			addr := s.GetImmediate(opcode)
+			c.StoreAtAddr(addr, src)
 		} else {
 			// mode = 1 AND dest REGISTER != 00 #(REGISTER + OFFSET) form
 			offset := s.GetImmediate(opcode)
-			base   := s.WhichMemOpDstReg(opcode)
+			base := s.WhichMemOpDstReg(opcode)
 			c.StoreAtRelative(src, base, offset)
 		}
 
@@ -96,7 +95,7 @@ func handleStore(c *Cpu) {
    |----------------------------------------------------------------------|
    | mode | opcode | source   | dest     | 8-bit source address           |
    +----------------------------------------------------------------------+
- */
+*/
 func handleLoad(c *Cpu) {
 	//is it immediate?
 	//src = constant register -- check bits 4, 5
@@ -105,16 +104,16 @@ func handleLoad(c *Cpu) {
 	dst := s.WhichMemOpDstReg(opcode)
 
 	// is this an immediate type store?
-	if (s.IsModeSet(opcode)) {
+	if s.IsModeSet(opcode) {
 
 		// mode = 1 AND src REGISTER == 00 (#ADDRESS form)
-		if (s.IsMemOpSrcZero(opcode)) {
-			addr  := s.GetImmediate(opcode)
-			c.LoadFromAddr(addr, dst) // load from addr into dest			
+		if s.IsMemOpSrcZero(opcode) {
+			addr := s.GetImmediate(opcode)
+			c.LoadFromAddr(addr, dst) // load from addr into dest
 		} else {
 			// mode = 1 AND src REGISTER != 00 #(REGISTER + OFFSET) form
 			offset := s.GetImmediate(opcode)
-			base   := s.WhichMemOpDstReg(opcode)
+			base := s.WhichMemOpDstReg(opcode)
 			c.LoadFromRelative(base, offset, dst)
 		}
 
@@ -142,22 +141,22 @@ func handleSub(c *Cpu) {
 
 func handleArithmetic(c *Cpu, opType uint64) {
 	opcode := c.CurrentInstruction()
-	
-	if (s.IsModeSet(opcode)) {
+
+	if s.IsModeSet(opcode) {
 
 		// immediate type add
 		src1 := s.WhichArithOpSrc1Reg(opcode)
 		dest := s.WhichArithOpSrc2Reg(opcode) // src2 is dest in this form
-		imm  := s.GetImmediate(opcode)	
+		imm := s.GetImmediate(opcode)
 
 		switch opType {
 		case s.ADD:
 			c.AddImmediate(src1, imm, dest)
 		case s.SUB:
-			c.SubImmediate(src1, imm, dest)	
- 		default:
- 			panic("Unknown arithmetic instruction type") 
- 		}
+			c.SubImmediate(src1, imm, dest)
+		default:
+			panic("Unknown arithmetic instruction type")
+		}
 
 	} else {
 
@@ -171,21 +170,21 @@ func handleArithmetic(c *Cpu, opType uint64) {
 			c.AddRegister(src1, src2, dest)
 		case s.SUB:
 			c.SubRegister(src1, src2, dest)
- 		default:
- 			panic("Unknown arithmetic instruction type") 
- 		}
+		default:
+			panic("Unknown arithmetic instruction type")
+		}
 	}
 }
 
 func handleJump(c *Cpu) {
 	opcode := c.CurrentInstruction()
-	imm  := s.GetImmediate(opcode)
+	imm := s.GetImmediate(opcode)
 
-	if (s.IsModeSet(opcode)) {
+	if s.IsModeSet(opcode) {
 
 		// if the top bit on the source register is set
 		// then this is an #ADDRESS type.
-		if (s.IsBitSet(opcode, 4)) {
+		if s.IsBitSet(opcode, 4) {
 			c.BranchAddress(imm)
 		} else {
 			// otherwise its a relative jump
@@ -205,40 +204,40 @@ func handleJump(c *Cpu) {
 func Emulate(romData []uint16) {
 
 	cpu := new(Cpu)
-   	cpu.Init(romData)
-
+	cpu.Init(romData)
+	cpu.ClearScreen()
 	for {
-			// CPU tick time
-			timer := time.Tick(time.Second/100)
-			<-timer
-			// bits 1, 2, 3
-			// 000 add
-			// 001 sub
-			// 010 load
-			// 011 store
-			// 100 jump
-			switch {
-			case isAdd(cpu.Instruction):
-				handleAdd(cpu)
-			case isSub(cpu.Instruction):
-				handleSub(cpu)
-			case isLoad(cpu.Instruction):
-				handleLoad(cpu)
-			case isStore(cpu.Instruction):
-				handleStore(cpu)
-			case isJump(cpu.Instruction):
-				handleJump(cpu)
-			default:
-				fmt.Printf("instruction is unknown %04x.", cpu.Instruction) // raise error
-			}
+		// CPU tick time
+		timer := time.Tick(time.Second / 100)
+		<-timer
+		// bits 1, 2, 3
+		// 000 add
+		// 001 sub
+		// 010 load
+		// 011 store
+		// 100 jump
+		switch {
+		case isAdd(cpu.Instruction):
+			handleAdd(cpu)
+		case isSub(cpu.Instruction):
+			handleSub(cpu)
+		case isLoad(cpu.Instruction):
+			handleLoad(cpu)
+		case isStore(cpu.Instruction):
+			handleStore(cpu)
+		case isJump(cpu.Instruction):
+			handleJump(cpu)
+		default:
+			fmt.Printf("instruction is unknown %04x.", cpu.Instruction) // raise error
+		}
 
-			cpu.Cycle()
-		    cpu.PrintState()
+		cpu.Cycle()
+		cpu.PrintState()
 
-		    if (cpu.IsHalted()) {
-		    	fmt.Println("CPU Halted")
-		    	break
-		    }
+		if cpu.IsHalted() {
+			fmt.Println("CPU Halted")
+			break
+		}
 	}
 
 }

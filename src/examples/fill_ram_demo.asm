@@ -1,7 +1,7 @@
+add D, 255, D
 LOOP: add B, 1, B
-store B, #C
-store B, #D
 add D, 1, D
 sub C, 1, C
-load #C, A
+store B, #C
+store B, #D
 jump LOOP
