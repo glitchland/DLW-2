@@ -27,15 +27,15 @@ func (r *RomMem) Load(opcodes []uint16) {
 	r.rom.WriteLock()
 }
 
-func (r *RomMem) Print() {
-	s := "ROM:\n"
+func (r *RomMem) ToStr() string {
+	s := ""
 	for i := 1; i <= RomAddrLimits; i++ {
 		s += fmt.Sprintf("%04X ", r.rom.GetWordAt(uint8(i-1)))
 		if i%16 == 0 {
 			s += fmt.Sprintf("\n")
 		}
 	}
-	fmt.Println(s)
+	return s
 }
 
 func (r *RomMem) Write(addr uint8, v uint16) {

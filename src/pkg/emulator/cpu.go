@@ -9,10 +9,7 @@ import (
 /// This represents CPU
 ///
 type Cpu struct {
-	A           uint8
-	B           uint8
-	C           uint8
-	D           uint8
+	regs        Registers
 	PC          uint8
 	PCBranchMod bool // has the PC been modified via branch
 	Instruction uint16
@@ -25,41 +22,9 @@ type Cpu struct {
 func (c *Cpu) Init(romData []uint16) {
 	c.rom.Init(romData)
 	c.ram.Init()
+	c.regs.Init()
 	c.LoadInstruction(0)
 	c.halted = false
-}
-
-/*
-  These Processor Status Word methods should be private.
-*/
-func (c *Cpu) readReg(r uint8) uint8 {
-	switch {
-	case r == s.A:
-		return c.A
-	case r == s.B:
-		return c.B
-	case r == s.C:
-		return c.C
-	case r == s.D:
-		return c.D
-	default:
-		panic("Unknown register") // XXX Handle Errors
-	}
-}
-
-func (c *Cpu) writeReg(r uint8, v uint8) {
-	switch {
-	case r == s.A:
-		c.A = v
-	case r == s.B:
-		c.B = v
-	case r == s.C:
-		c.C = v
-	case r == s.D:
-		c.D = v
-	default:
-		panic("Unknown register") // XXX Handle Errors
-	}
 }
 
 ///////////////////////////////////////////////////
@@ -67,20 +32,20 @@ func (c *Cpu) writeReg(r uint8, v uint8) {
 ///////////////////////////////////////////////////
 
 func (c *Cpu) StoreAtRegReference(srcr uint8, dstr uint8) {
-	addr := c.readReg(dstr)
-	v := c.readReg(srcr)
+	addr := c.regs.Read(dstr)
+	v := c.regs.Read(srcr)
 	c.ram.Write(addr, v)
 }
 
 func (c *Cpu) StoreAtRelative(srcr uint8, baser uint8, offset uint8) {
-	base := c.readReg(baser)
+	base := c.regs.Read(baser)
 	addr := base + offset
-	v := c.readReg(srcr)
+	v := c.regs.Read(srcr)
 	c.ram.Write(addr, v)
 }
 
 func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
-	v := c.readReg(rv)
+	v := c.regs.Read(rv)
 	c.ram.Write(addr, v)
 }
 
@@ -89,55 +54,55 @@ func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
 ///////////////////////////////////////////////////
 
 func (c *Cpu) LoadFromRegReference(srcr uint8, dstr uint8) {
-	addr := c.readReg(srcr)
+	addr := c.regs.Read(srcr)
 	v := c.ram.Read(addr)
-	c.writeReg(dstr, v)
+	c.regs.Write(dstr, v)
 }
 
 func (c *Cpu) LoadFromRelative(baser uint8, offset uint8, dstr uint8) {
-	base := c.readReg(baser)
+	base := c.regs.Read(baser)
 	addr := base + offset
 	v := c.ram.Read(addr)
-	c.writeReg(dstr, v)
+	c.regs.Write(dstr, v)
 }
 
 func (c *Cpu) LoadFromAddr(addr uint8, dstr uint8) {
 	v := c.ram.Read(addr)
-	c.writeReg(dstr, v)
+	c.regs.Write(dstr, v)
 }
 
 ///////////////////////////////////////////////////
 // Add instructions
 ///////////////////////////////////////////////////
 func (c *Cpu) AddImmediate(src1 uint8, imm uint8, dest uint8) {
-	x := c.readReg(src1)
+	x := c.regs.Read(src1)
 	y := imm
 	v := c.alu.Add(x, y)
-	c.writeReg(dest, v)
+	c.regs.Write(dest, v)
 }
 
 func (c *Cpu) AddRegister(src1 uint8, src2 uint8, dest uint8) {
-	x := c.readReg(src1)
-	y := c.readReg(src2)
+	x := c.regs.Read(src1)
+	y := c.regs.Read(src2)
 	v := c.alu.Add(x, y)
-	c.writeReg(dest, v)
+	c.regs.Write(dest, v)
 }
 
 ///////////////////////////////////////////////////
 // Sub instructions
 ///////////////////////////////////////////////////
 func (c *Cpu) SubImmediate(src1 uint8, imm uint8, dest uint8) {
-	x := c.readReg(src1)
+	x := c.regs.Read(src1)
 	y := imm
 	v := c.alu.Sub(x, y)
-	c.writeReg(dest, v)
+	c.regs.Write(dest, v)
 }
 
 func (c *Cpu) SubRegister(src1 uint8, src2 uint8, dest uint8) {
-	x := c.readReg(src1)
-	y := c.readReg(src2)
+	x := c.regs.Read(src1)
+	y := c.regs.Read(src2)
 	v := c.alu.Sub(x, y)
-	c.writeReg(dest, v)
+	c.regs.Write(dest, v)
 }
 
 func (c *Cpu) Cycle() {
@@ -208,23 +173,7 @@ func (c *Cpu) AddPc(v uint8) {
 }
 
 func (c *Cpu) AdjustPC(baseRegister uint8, offset uint8) {
-	c.PC = c.readReg(baseRegister) + offset
-}
-
-func (c *Cpu) SetA(v uint8) {
-	c.A = v
-}
-
-func (c *Cpu) SetB(v uint8) {
-	c.A = v
-}
-
-func (c *Cpu) SetC(v uint8) {
-	c.A = v
-}
-
-func (c *Cpu) SetD(v uint8) {
-	c.A = v
+	c.PC = c.regs.Read(baseRegister) + offset
 }
 
 func (c *Cpu) IsHalted() bool {
@@ -250,14 +199,19 @@ func (c *Cpu) ClearScreen() {
 
 func (c *Cpu) PrintState() {
 	fmt.Printf("\033[0;0H")
-	fmt.Printf("CPU State:\n")
-	fmt.Printf("-----------------------------------------------\n")
-	fmt.Printf("A:\t%02X B:\t%02X \nC:\t%02X D:\t%02X\n", c.A, c.B, c.C, c.D)
-	fmt.Printf("PC:\t%02X ZF:%s OF:%s SF:%s\n", c.PC, s.BoolToIntStr(c.alu.ZeroFlag()),
+	fmt.Printf("+----------------------------------------------+\n")
+	fmt.Printf("|CPU STATE                                     |\n")
+	fmt.Printf("+----------------------------------------------+\n")
+	fmt.Printf("|A:\t%02X B:\t%02X                             |\n", c.regs.A, c.regs.B)
+	fmt.Printf("|C:\t%02X D:\t%02X                             |\n", c.regs.C, c.regs.D)
+	fmt.Printf("+----------------------------------------------+\n")
+	fmt.Printf("|Flags: ZF:%s OF:%s SF:%s                         |\n",
+		s.BoolToIntStr(c.alu.ZeroFlag()),
 		s.BoolToIntStr(c.alu.OverflowFlag()),
 		s.BoolToIntStr(c.alu.SignFlag()))
-	fmt.Printf("Ins:[%b]\n", c.CurrentInstruction())
-	fmt.Printf("-----------------------------------------------\n")
-	c.ram.Print()
-	c.rom.Print()
+	fmt.Printf("+----------------------------------------------+\n")
+	fmt.Printf("|PC:\t[%02X] -> [%b]             |\n", c.PC, c.CurrentInstruction())
+	fmt.Printf("+----------------------------------------------+\n")
+	fmt.Printf("RAM:\n%s\n", c.ram.ToStr())
+	fmt.Printf("ROM:\n%s\n", c.rom.ToStr())
 }

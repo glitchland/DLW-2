@@ -208,7 +208,7 @@ func Emulate(romData []uint16) {
 	cpu.ClearScreen()
 	for {
 		// CPU tick time
-		timer := time.Tick(time.Second / 100)
+		timer := time.Tick(time.Second / 50)
 		<-timer
 		// bits 1, 2, 3
 		// 000 add

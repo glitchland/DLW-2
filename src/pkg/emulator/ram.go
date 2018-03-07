@@ -17,15 +17,15 @@ func (r *RamMem) Init() {
 	r.ram.Zero8()
 }
 
-func (r *RamMem) Print() {
-	s := "RAM:\n"
+func (r *RamMem) ToStr() string {
+	s := ""
 	for i := 1; i <= RamAddrLimits; i++ {
 		s += fmt.Sprintf("%02X ", r.ram.GetByteAt(uint8(i-1)))
 		if i%16 == 0 {
 			s += fmt.Sprintf("\n")
 		}
 	}
-	fmt.Println(s)
+	return s
 }
 
 func (r *RamMem) Write(addr uint8, v uint8) {
