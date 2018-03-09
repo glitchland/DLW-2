@@ -32,20 +32,31 @@ func (c *Cpu) Init(romData []uint16) {
 ///////////////////////////////////////////////////
 
 func (c *Cpu) StoreAtRegReference(srcr uint8, dstr uint8) {
-	addr := c.regs.Read(dstr)
-	v := c.regs.Read(srcr)
+	addr, err := c.regs.Read(dstr)
+	s.ChkFatalError(err)
+
+	v, err := c.regs.Read(srcr)
+	s.ChkFatalError(err)
+
 	c.ram.Write(addr, v)
 }
 
 func (c *Cpu) StoreAtRelative(srcr uint8, baser uint8, offset uint8) {
-	base := c.regs.Read(baser)
+	base, err := c.regs.Read(baser)
+	s.ChkFatalError(err)
+
 	addr := base + offset
-	v := c.regs.Read(srcr)
+
+	v, err := c.regs.Read(srcr)
+	s.ChkFatalError(err)
+
 	c.ram.Write(addr, v)
 }
 
 func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
-	v := c.regs.Read(rv)
+	v, err := c.regs.Read(rv)
+	s.ChkFatalError(err)
+
 	c.ram.Write(addr, v)
 }
 
@@ -54,55 +65,74 @@ func (c *Cpu) StoreAtAddr(addr uint8, rv uint8) {
 ///////////////////////////////////////////////////
 
 func (c *Cpu) LoadFromRegReference(srcr uint8, dstr uint8) {
-	addr := c.regs.Read(srcr)
+	addr, err := c.regs.Read(srcr)
+	s.ChkFatalError(err)
+
 	v := c.ram.Read(addr)
-	c.regs.Write(dstr, v)
+
+	err = c.regs.Write(dstr, v)
+	s.ChkFatalError(err)
 }
 
 func (c *Cpu) LoadFromRelative(baser uint8, offset uint8, dstr uint8) {
-	base := c.regs.Read(baser)
+	base, err := c.regs.Read(baser)
+	s.ChkFatalError(err)
+
 	addr := base + offset
 	v := c.ram.Read(addr)
-	c.regs.Write(dstr, v)
+
+	err = c.regs.Write(dstr, v)
+	s.ChkFatalError(err)
 }
 
 func (c *Cpu) LoadFromAddr(addr uint8, dstr uint8) {
 	v := c.ram.Read(addr)
-	c.regs.Write(dstr, v)
+	err := c.regs.Write(dstr, v)
+	s.ChkFatalError(err)
 }
 
 ///////////////////////////////////////////////////
 // Add instructions
 ///////////////////////////////////////////////////
 func (c *Cpu) AddImmediate(src1 uint8, imm uint8, dest uint8) {
-	x := c.regs.Read(src1)
+	x, err := c.regs.Read(src1)
+	s.ChkFatalError(err)
 	y := imm
 	v := c.alu.Add(x, y)
-	c.regs.Write(dest, v)
+	err = c.regs.Write(dest, v)
+	s.ChkFatalError(err)
 }
 
 func (c *Cpu) AddRegister(src1 uint8, src2 uint8, dest uint8) {
-	x := c.regs.Read(src1)
-	y := c.regs.Read(src2)
+	x, err := c.regs.Read(src1)
+	s.ChkFatalError(err)
+	y, err := c.regs.Read(src2)
+	s.ChkFatalError(err)
 	v := c.alu.Add(x, y)
-	c.regs.Write(dest, v)
+	err = c.regs.Write(dest, v)
+	s.ChkFatalError(err)
 }
 
 ///////////////////////////////////////////////////
 // Sub instructions
 ///////////////////////////////////////////////////
 func (c *Cpu) SubImmediate(src1 uint8, imm uint8, dest uint8) {
-	x := c.regs.Read(src1)
+	x, err := c.regs.Read(src1)
+	s.ChkFatalError(err)
 	y := imm
 	v := c.alu.Sub(x, y)
-	c.regs.Write(dest, v)
+	err = c.regs.Write(dest, v)
+	s.ChkFatalError(err)
 }
 
 func (c *Cpu) SubRegister(src1 uint8, src2 uint8, dest uint8) {
-	x := c.regs.Read(src1)
-	y := c.regs.Read(src2)
+	x, err := c.regs.Read(src1)
+	s.ChkFatalError(err)
+	y, err := c.regs.Read(src2)
+	s.ChkFatalError(err)
 	v := c.alu.Sub(x, y)
-	c.regs.Write(dest, v)
+	err = c.regs.Write(dest, v)
+	s.ChkFatalError(err)
 }
 
 func (c *Cpu) Cycle() {
@@ -131,6 +161,9 @@ func (c *Cpu) unsetBranchedPC() {
 	c.PCBranchMod = false
 }
 
+///////////////////////////////////////////////////
+// Branch unconditional
+///////////////////////////////////////////////////
 func (c *Cpu) BranchAddress(a uint8) {
 	c.setBranchedPC()
 	c.SetPc(a)
@@ -143,6 +176,29 @@ func (c *Cpu) BranchRelative(v uint8) {
 
 func (c *Cpu) BranchArithmetic(baseRegister uint8, offset uint8) {
 	c.AdjustPC(baseRegister, offset)
+}
+
+///////////////////////////////////////////////////
+// Branch zero flag
+///////////////////////////////////////////////////
+func (c *Cpu) BranchAddressCondZ(a uint8) {
+	if c.alu.ZeroFlag() {
+		c.setBranchedPC()
+		c.SetPc(a)
+	}
+}
+
+func (c *Cpu) BranchRelativeCondZ(v uint8) {
+	if c.alu.ZeroFlag() {
+		c.setBranchedPC()
+		c.AddPc(v)
+	}
+}
+
+func (c *Cpu) BranchArithmeticCondZ(baseRegister uint8, offset uint8) {
+	if c.alu.ZeroFlag() {
+		c.AdjustPC(baseRegister, offset)
+	}
 }
 
 func (c *Cpu) IncPc() {
@@ -173,7 +229,9 @@ func (c *Cpu) AddPc(v uint8) {
 }
 
 func (c *Cpu) AdjustPC(baseRegister uint8, offset uint8) {
-	c.PC = c.regs.Read(baseRegister) + offset
+	v, err := c.regs.Read(baseRegister)
+	s.ChkFatalError(err)
+	c.PC = v + offset
 }
 
 func (c *Cpu) IsHalted() bool {

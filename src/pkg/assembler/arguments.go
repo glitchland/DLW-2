@@ -1,26 +1,26 @@
-package asm 
+package asm
 
 import (
-  "fmt"
-  s "pkg/shared"
+	"fmt"
+	s "pkg/shared"
 )
 
 ///
 /// Argument type
 ///
 type Argument struct {
-	IsImmediate       bool
-	IsLabel           bool
-	IsRegister        bool
-	IsAddress         bool
-	IsDereference     bool
-	Register          uint8
-	BaseRegister      uint8
-	Address           uint8
-	Offset            uint8
-	Label             string
-	LabelOffset       int8
-	ImmediateInt      uint8
+	IsImmediate   bool
+	IsLabel       bool
+	IsRegister    bool
+	IsAddress     bool
+	IsDereference bool
+	Register      uint8
+	BaseRegister  uint8
+	Address       uint8
+	Offset        uint8
+	Label         string
+	LabelOffset   int8
+	ImmediateInt  uint8
 }
 
 func (a *Argument) Init() {
@@ -77,7 +77,7 @@ func (a *Argument) RegIntToStr(register uint8) string {
 	case register == s.C:
 		return "C"
 	case register == s.D:
-		return "D"						
+		return "D"
 	default:
 		return fmt.Sprintf("unknown register %d", register)
 	}
@@ -95,9 +95,9 @@ func (a *Argument) ToString() string {
 	s += fmt.Sprintf("address value.............: %d\n", a.Address)
 	s += fmt.Sprintf("offset value..............: %d\n", a.Offset)
 	s += fmt.Sprintf("label value...............: '%s'\n", a.Label)
-    if (a.IsLabel) {
-    	s += fmt.Sprintf("label offset..............: %d\n", a.LabelOffset)
-    }	
-	s += fmt.Sprintf("immediate int value.......: %d\n", a.ImmediateInt)	
+	if a.IsLabel {
+		s += fmt.Sprintf("label offset..............: %d\n", a.LabelOffset)
+	}
+	s += fmt.Sprintf("immediate int value.......: %d\n", a.ImmediateInt)
 	return s
 }

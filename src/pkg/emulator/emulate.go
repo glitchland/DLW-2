@@ -9,6 +9,7 @@ import (
 // check the opcode bits and pass to the correct handler
 // arithmetic, memory,
 
+//000
 func isAdd(opcode uint16) bool {
 	if !s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
 		return true
@@ -16,6 +17,7 @@ func isAdd(opcode uint16) bool {
 	return false
 }
 
+//001
 func isSub(opcode uint16) bool {
 	if !s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) {
 		return true
@@ -23,6 +25,7 @@ func isSub(opcode uint16) bool {
 	return false
 }
 
+//010
 func isLoad(opcode uint16) bool {
 	if !s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
 		return true
@@ -30,6 +33,7 @@ func isLoad(opcode uint16) bool {
 	return false
 }
 
+//011
 func isStore(opcode uint16) bool {
 	if !s.IsBitSet(opcode, 1) && s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) {
 		return true
@@ -37,9 +41,17 @@ func isStore(opcode uint16) bool {
 	return false
 }
 
-// 100
+//100
 func isJump(opcode uint16) bool {
 	if s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && !s.IsBitSet(opcode, 3) {
+		return true
+	}
+	return false
+}
+
+//101
+func isJumpz(opcode uint16) bool {
+	if s.IsBitSet(opcode, 1) && !s.IsBitSet(opcode, 2) && s.IsBitSet(opcode, 3) {
 		return true
 	}
 	return false
@@ -132,14 +144,16 @@ imediateType
 |mode|opcode|source|dest    |   8-bit immediate   |
 */
 func handleAdd(c *Cpu) {
-	handleArithmetic(c, s.ADD)
+	err := handleArithmetic(c, s.ADD)
+	s.ChkFatalError(err)
 }
 
 func handleSub(c *Cpu) {
-	handleArithmetic(c, s.SUB)
+	err := handleArithmetic(c, s.SUB)
+	s.ChkFatalError(err)
 }
 
-func handleArithmetic(c *Cpu, opType uint64) {
+func handleArithmetic(c *Cpu, opType uint64) error {
 	opcode := c.CurrentInstruction()
 
 	if s.IsModeSet(opcode) {
@@ -155,7 +169,7 @@ func handleArithmetic(c *Cpu, opType uint64) {
 		case s.SUB:
 			c.SubImmediate(src1, imm, dest)
 		default:
-			panic("Unknown arithmetic instruction type")
+			return &s.EmulatorError{"Unknown arithmetic instruction type"}
 		}
 
 	} else {
@@ -171,9 +185,11 @@ func handleArithmetic(c *Cpu, opType uint64) {
 		case s.SUB:
 			c.SubRegister(src1, src2, dest)
 		default:
-			panic("Unknown arithmetic instruction type")
+			return &s.EmulatorError{"Unknown arithmetic instruction type"}
 		}
 	}
+
+	return nil
 }
 
 func handleJump(c *Cpu) {
@@ -181,7 +197,6 @@ func handleJump(c *Cpu) {
 	imm := s.GetImmediate(opcode)
 
 	if s.IsModeSet(opcode) {
-
 		// if the top bit on the source register is set
 		// then this is an #ADDRESS type.
 		if s.IsBitSet(opcode, 4) {
@@ -190,14 +205,32 @@ func handleJump(c *Cpu) {
 			// otherwise its a relative jump
 			c.BranchRelative(imm)
 		}
-
 	} else {
-
 		// this is a #REGISTER + IMMEDIATE type
 		// bits 6,7 is register portion
 		baseReg := s.WhichJmpOpDstReg(opcode)
 		c.BranchArithmetic(baseReg, imm)
+	}
+}
 
+func handleJumpz(c *Cpu) {
+	opcode := c.CurrentInstruction()
+	imm := s.GetImmediate(opcode)
+
+	if s.IsModeSet(opcode) {
+		// if the top bit on the source register is set
+		// then this is an #ADDRESS type.
+		if s.IsBitSet(opcode, 4) {
+			c.BranchAddressCondZ(imm)
+		} else {
+			// otherwise its a relative jump
+			c.BranchRelativeCondZ(imm)
+		}
+	} else {
+		// this is a #REGISTER + IMMEDIATE type
+		// bits 6,7 is register portion
+		baseReg := s.WhichJmpOpDstReg(opcode)
+		c.BranchArithmeticCondZ(baseReg, imm)
 	}
 }
 

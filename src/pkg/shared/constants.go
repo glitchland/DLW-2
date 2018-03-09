@@ -1,16 +1,17 @@
-package shared 
+package shared
 
-import(
+import (
 	"fmt"
 )
 
-// instructions enum 
+// instructions enum
 const (
-	ADD = iota 
+	ADD = iota
 	SUB
 	LOAD
 	STORE
 	JUMP
+	JUMPZ
 )
 
 // registers enum
@@ -31,7 +32,7 @@ func Ritos(register uint8) string {
 	case register == C:
 		return "C"
 	case register == D:
-		return "D"						
+		return "D"
 	default:
 		return fmt.Sprintf("unknown register %d", register)
 	}

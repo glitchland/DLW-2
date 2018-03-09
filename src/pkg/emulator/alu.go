@@ -88,27 +88,27 @@ func (a *Alu) checkAndSetZF(v uint8) {
 
 //set sign flag
 func (a *Alu) setSignFlag() {
-	s.SetBit(&a.PSW, SignFlagBitIndex)
+	a.PSW = s.SetBit(a.PSW, SignFlagBitIndex)
 }
 
 func (a *Alu) unsetSignFlag() {
-	s.UnsetBit(&a.PSW, SignFlagBitIndex)
+	a.PSW = s.UnsetBit(a.PSW, SignFlagBitIndex)
 }
 
 //set overflow flag
 func (a *Alu) setOverflowFlag() {
-	s.SetBit(&a.PSW, OverflowFlagBitIndex)
+	a.PSW = s.SetBit(a.PSW, OverflowFlagBitIndex)
 }
 
 func (a *Alu) unsetOverflowFlag() {
-	s.UnsetBit(&a.PSW, OverflowFlagBitIndex)
+	a.PSW = s.UnsetBit(a.PSW, OverflowFlagBitIndex)
 }
 
 //set zero flag
 func (a *Alu) setZeroFlag() {
-	s.SetBit(&a.PSW, ZeroFlagBitIndex)
+	a.PSW = s.SetBit(a.PSW, ZeroFlagBitIndex)
 }
 
 func (a *Alu) unsetZeroFlag() {
-	s.UnsetBit(&a.PSW, ZeroFlagBitIndex)
+	a.PSW = s.UnsetBit(a.PSW, ZeroFlagBitIndex)
 }

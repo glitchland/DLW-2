@@ -18,22 +18,22 @@ func (r *Registers) Init() {
 	r.D = uint8(0)
 }
 
-func (r *Registers) Read(reg uint8) uint8 {
+func (r *Registers) Read(reg uint8) (uint8, error) {
 	switch {
 	case reg == s.A:
-		return r.A
+		return r.A, nil
 	case reg == s.B:
-		return r.B
+		return r.B, nil
 	case reg == s.C:
-		return r.C
+		return r.C, nil
 	case reg == s.D:
-		return r.D
+		return r.D, nil
 	default:
-		panic("Unknown register") // XXX Handle Errors
+		return 0, &s.EmulatorError{"Fatal read attempt from unknown register"}
 	}
 }
 
-func (r *Registers) Write(reg uint8, v uint8) {
+func (r *Registers) Write(reg uint8, v uint8) error {
 	switch {
 	case reg == s.A:
 		r.A = v
@@ -44,8 +44,9 @@ func (r *Registers) Write(reg uint8, v uint8) {
 	case reg == s.D:
 		r.D = v
 	default:
-		panic("Unknown register") // XXX Handle Errors
+		return &s.EmulatorError{"Fatal write attempt to unknown register"}
 	}
+	return nil
 }
 
 func (r *Registers) SetA(v uint8) {

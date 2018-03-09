@@ -1,12 +1,11 @@
 package main
 
 import (
-	"pkg/assembler"
-	"encoding/binary"	
+	"encoding/binary"
 	"fmt"
 	"os"
+	"pkg/assembler"
 )
-
 
 func main() {
 	if len(os.Args) != 2 {
@@ -15,7 +14,6 @@ func main() {
 	}
 
 	lines, err := asm.ParseLines(os.Args[1], func(s string) (string, bool) {
-		fmt.Println(s)
 		return s, true
 	})
 
@@ -26,7 +24,7 @@ func main() {
 
 	// pack the words into a byte string
 	// https://golang.org/pkg/encoding/binary/#example_Read
-	romdata := make([]byte, len(lines) * 2)
+	romdata := make([]byte, len(lines)*2)
 	i := 0
 	for _, l := range lines {
 		binary.LittleEndian.PutUint16(romdata[i:], l)
@@ -35,7 +33,7 @@ func main() {
 
 	// check errors
 	binfile, _ := os.Create("rom.bin")
-	
+
 	// check errors
 	binary.Write(binfile, binary.LittleEndian, romdata)
 
