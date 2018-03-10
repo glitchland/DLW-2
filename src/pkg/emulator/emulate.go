@@ -243,12 +243,6 @@ func Emulate(romData []uint16) {
 		// CPU tick time
 		timer := time.Tick(time.Second / 50)
 		<-timer
-		// bits 1, 2, 3
-		// 000 add
-		// 001 sub
-		// 010 load
-		// 011 store
-		// 100 jump
 		switch {
 		case isAdd(cpu.Instruction):
 			handleAdd(cpu)

@@ -225,7 +225,7 @@ func parseAsmLine(input string) []string {
 */
 func HandleArithmetic(instructionType uint64, lineNumber uint8, asm string) (uint16, error) {
 
-	var bytecode uint16
+	var opcode uint16
 	var err error
 
 	// collect the arguments from the line
@@ -240,32 +240,32 @@ func HandleArithmetic(instructionType uint64, lineNumber uint8, asm string) (uin
 	if (src1.IsDereference || src1.IsLabel) ||
 		(src2.IsDereference || src2.IsLabel) ||
 		(dest.IsDereference || dest.IsLabel) {
-		return bytecode, &s.SyntaxError{"Arithmetic instructions can operate on register or immediate", asm, lineNumber}
+		return opcode, &s.SyntaxError{"Arithmetic instructions can operate on register or immediate", asm, lineNumber}
 	}
 
-	// generate the bytecode based on the types of arguments
+	// generate the opcode based on the types of arguments
 	if src1.IsRegister && src2.IsRegister && dest.IsRegister {
-		bytecode = registerArithmeticByteCode(src1, src2, dest, bytecode)
+		opcode = registerArithmeticopcode(src1, src2, dest, opcode)
 	} else {
-		bytecode, err = immediateArithmeticByteCode(src1, src2, dest, bytecode)
+		opcode, err = immediateArithmeticopcode(src1, src2, dest, opcode)
 		if err != nil {
 			// return the error up the stack
-			return bytecode, err
+			return opcode, err
 		}
 	}
 
 	// set the instruction bits last
-	bytecode = setInstructionOpcodeBits(instructionType, bytecode)
+	opcode = setInstructionOpcodeBits(instructionType, opcode)
 
 	// set the instruction code
-	return bytecode, nil
+	return opcode, nil
 }
 
 // load addr, dest_reg
 // store src_reg, addr deref reg or offset
 func HandleMemoryOperation(instructionType uint64, lineNumber uint8, asm string) (uint16, error) {
 
-	var bytecode uint16
+	var opcode uint16
 	var err error
 
 	// collect the arguments from the line
@@ -276,22 +276,22 @@ func HandleMemoryOperation(instructionType uint64, lineNumber uint8, asm string)
 	arg2 := getArgument(arguments[1])
 
 	if instructionType == s.LOAD {
-		bytecode, err = getLoadByteCode(arg1, arg2, asm, lineNumber)
-		return bytecode, err
+		opcode, err = getLoadopcode(arg1, arg2, asm, lineNumber)
+		return opcode, err
 	}
 
 	if instructionType == s.STORE {
-		bytecode, err = getStoreByteCode(arg1, arg2, asm, lineNumber)
-		return bytecode, err
+		opcode, err = getStoreopcode(arg1, arg2, asm, lineNumber)
+		return opcode, err
 	}
 
-	return bytecode, nil
+	return opcode, nil
 }
 
 // jump/jumpz #reg, #(reg + offset), label
 func HandleBranchOperation(branchType uint64, labelOffsets map[string]uint8, currentLineNumber uint8, asm string) (uint16, error) {
 
-	var bytecode uint16
+	var opcode uint16
 	var err error
 
 	// collect the arguments from the line
@@ -306,13 +306,13 @@ func HandleBranchOperation(branchType uint64, labelOffsets map[string]uint8, cur
 			arg.SetLabelRelativeOffset(labelLineNumber, currentLineNumber)
 		} else {
 			eS := fmt.Sprintf("the label %s does not exist in assembly", arg.Label)
-			return bytecode, &s.SyntaxError{eS, asm, currentLineNumber}
+			return opcode, &s.SyntaxError{eS, asm, currentLineNumber}
 		}
 	}
 
-	bytecode, err = getJumpByteCode(branchType, arg, asm, currentLineNumber)
+	opcode, err = getJumpopcode(branchType, arg, asm, currentLineNumber)
 
-	return bytecode, err
+	return opcode, err
 }
 
 func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, error) {

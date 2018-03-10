@@ -37,7 +37,7 @@ func (a *Alu) Sub(x uint8, y uint8) uint8 {
 	a.resetFlags()
 	v := x - y
 
-	a.checkAndSetAddOF(x, y)
+	a.checkAndSetSubOF(x, y)
 	a.checkAndSetZF(v)
 	a.checkAndSetSF(v)
 
@@ -69,7 +69,7 @@ func (a *Alu) checkAndSetAddOF(x uint8, y uint8) {
 }
 
 func (a *Alu) checkAndSetSubOF(x uint8, y uint8) {
-	if uint16(x)-uint16(y) > MaxUint8 { //0xffff
+	if (uint16(x) - uint16(y)) > MaxUint8 { //0xffff
 		a.setOverflowFlag()
 	}
 }
