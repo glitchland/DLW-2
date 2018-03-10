@@ -22,8 +22,6 @@ func main() {
 		return
 	}
 
-	// pack the words into a byte string
-	// https://golang.org/pkg/encoding/binary/#example_Read
 	romdata := make([]byte, len(lines)*2)
 	i := 0
 	for _, l := range lines {
@@ -31,10 +29,10 @@ func main() {
 		i += 2
 	}
 
-	// check errors
+	// XXX check errors
 	binfile, _ := os.Create("rom.bin")
 
-	// check errors
+	// XXX check errors
 	binary.Write(binfile, binary.LittleEndian, romdata)
 
 	fmt.Println(romdata)

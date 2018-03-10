@@ -379,7 +379,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				if opcode, e := HandleArithmetic(s.ADD, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Add |%b|\n", opcode)
+					fmt.Printf("Add [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 
@@ -387,7 +387,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				if opcode, e := HandleArithmetic(s.SUB, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Sub |%b|\n", opcode)
+					fmt.Printf("Sub [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 
@@ -395,7 +395,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				if opcode, e := HandleMemoryOperation(s.LOAD, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Load |%b|\n", opcode)
+					fmt.Printf("Load [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 
@@ -403,7 +403,7 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				if opcode, e := HandleMemoryOperation(s.STORE, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Store |%b|\n", opcode)
+					fmt.Printf("Store [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 
@@ -411,14 +411,14 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 				if opcode, e := HandleBranchOperation(s.JUMP, labelOffsets, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Jump |%b|\n", opcode)
+					fmt.Printf("Jump [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 			case jumpz.MatchString(output):
 				if opcode, e := HandleBranchOperation(s.JUMPZ, labelOffsets, lineNumber, output); e != nil {
 					s.ChkFatalError(e)
 				} else {
-					fmt.Printf("Jumpz |%b|\n", opcode)
+					fmt.Printf("Jumpz [%s] -> |%016b|\n", output, opcode)
 					results = append(results, opcode)
 				}
 			case comment.MatchString(output):

@@ -1,17 +1,24 @@
-      sub A, B, A
+      sub A, B, C
+      sub C, B, A
+      add A, B, C
+      add C, B, A
       sub D, D, D
-      jumpz LBL1
-      add A, 15, A
-      add #A, 15, A
-      add B, #(D + 6), C
-      add LBL1, C, #D
-      store A, #(D + 16)
-LBL1: add A, B, B
-      store B, #(D + 16)
+      add A, 15, C
+      sub A, 15, C   
+      store C, #(D + 16)
+      store C, #1
+      store B, #D
       load #13, B
-      load #(A + 2), C
-      store C, #14
+      load #(C + 2), C
+      load #D, D
       jumpz LBL1
       jumpz #C
       jumpz #(D + 16)
+      jumpz 1
+      jumpz -1      
       jump LBL1
+      jump #C
+      jump #(D + 16)
+      jump 1
+      jump -1  
+LBL1: add A, B, B      
