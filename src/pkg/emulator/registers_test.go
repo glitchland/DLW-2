@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestInit(t *testing.T) {
+func TestRegisterInit(t *testing.T) {
 	var r Registers
 	var ex uint8 = 0
 

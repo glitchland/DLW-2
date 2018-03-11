@@ -35,6 +35,14 @@ var subtests = []struct {
 	{0, 0, 0, true, false, false},
 }
 
+func TestAluInit(t *testing.T) {
+	var alu Alu
+	alu.Init()
+	if alu.PSW != 0 {
+		t.Errorf("Alu init want PSW (%x) got (%x)", 0, alu.PSW)
+	}
+}
+
 func TestAdd(t *testing.T) {
 	var alu Alu
 	for _, tsts := range addtests {
