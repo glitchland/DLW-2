@@ -2,7 +2,6 @@ package emu
 
 import (
 	s "pkg/shared"
-	"strconv"
 	"testing"
 )
 
@@ -22,7 +21,10 @@ var isaddt = []struct {
 
 func TestIsAdd(t *testing.T) {
 	for _, tst := range isaddt {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isAdd(o)
 		if r != tst.ex {
 			t.Errorf("isAdd(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -46,7 +48,10 @@ var issubt = []struct {
 
 func TestIsSub(t *testing.T) {
 	for _, tst := range issubt {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isSub(o)
 		if r != tst.ex {
 			t.Errorf("isSub(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -70,7 +75,10 @@ var isloadt = []struct {
 
 func TestIsLoad(t *testing.T) {
 	for _, tst := range isloadt {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isLoad(o)
 		if r != tst.ex {
 			t.Errorf("isLoad(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -94,7 +102,10 @@ var isstoret = []struct {
 
 func TestIsStore(t *testing.T) {
 	for _, tst := range isstoret {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isStore(o)
 		if r != tst.ex {
 			t.Errorf("isStore(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -118,7 +129,10 @@ var isjumpt = []struct {
 
 func TestIsJump(t *testing.T) {
 	for _, tst := range isjumpt {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isJump(o)
 		if r != tst.ex {
 			t.Errorf("isJump(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -142,7 +156,10 @@ var isjumpzt = []struct {
 
 func TestIsJumpz(t *testing.T) {
 	for _, tst := range isjumpzt {
-		o := binStrToUint16(t, tst.bs)
+		o, err := s.BinStrToUint16(tst.bs)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bs)
+		}
 		r := isJumpz(o)
 		if r != tst.ex {
 			t.Errorf("isJumpz(%s) => %v, want %v", tst.bs, r, tst.ex)
@@ -176,7 +193,10 @@ func TestHandleArithmetic(t *testing.T) {
 		cpu.regs.Write(s.C, 0)
 		cpu.regs.Write(s.D, 0) // set up the entry state
 
-		o := binStrToUint16(t, tst.bts)
+		o, err := s.BinStrToUint16(tst.bts)
+		if err != nil {
+			t.Errorf("Could not convert (%s)", tst.bts)
+		}
 		cpu.Instruction = o
 
 		switch tst.opType {
@@ -227,10 +247,3 @@ jump 1 --> 1100100000000001
 jump -1 --> 1100100011111111
 LBL1: add A, B, B --> 0000000101000000
 */
-func binStrToUint16(t *testing.T, bs string) uint16 {
-	i, err := strconv.ParseInt(bs, 2, 17)
-	if err != nil {
-		t.Error(err)
-	}
-	return uint16(i)
-}

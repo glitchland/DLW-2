@@ -54,13 +54,13 @@ func (r *Registers) SetA(v uint8) {
 }
 
 func (r *Registers) SetB(v uint8) {
-	r.A = v
+	r.B = v
 }
 
 func (r *Registers) SetC(v uint8) {
-	r.A = v
+	r.C = v
 }
 
 func (r *Registers) SetD(v uint8) {
-	r.A = v
+	r.D = v
 }

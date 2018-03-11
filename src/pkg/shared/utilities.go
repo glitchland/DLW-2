@@ -1,5 +1,9 @@
 package shared
 
+import (
+	"strconv"
+)
+
 const (
 	MEMOP_SRC_BIT_IDX    = 4
 	MEMOP_DST_BIT_IDX    = 6
@@ -109,4 +113,9 @@ func WhichJmpOpDstReg(opcode uint16) uint8 {
 
 func GetImmediate(opcode uint16) uint8 {
 	return uint8(opcode & 0xFF)
+}
+
+func BinStrToUint16(bs string) (uint16, error) {
+	i, err := strconv.ParseInt(bs, 2, 17)
+	return uint16(i), err
 }
