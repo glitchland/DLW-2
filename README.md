@@ -5,6 +5,19 @@ $ go run src/cmd/asm/main.go src/examples/fill_ram_demo.asm
 $ go run src/cmd/emu/main.go 
 ```
 
+How to run tests:    
+```   
+Tests:  
+go test pkg/emulator/ -coverprofile=coverage.out
+
+Coverage:
+go tool cover -func=coverage.out
+
+Investigate missing coverage:   
+go tool cover -html=coverage.out
+
+```
+
 ```
 8-bit addressing, 16-bit instructions, 16-bit memory and register width
 

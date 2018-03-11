@@ -113,4 +113,14 @@ func TestWrite(t *testing.T) {
 			}
 		}
 	}
+
+	// test error
+	err := r.Write(255, 1)
+	if err == nil {
+		t.Errorf("Expected error when writing to non-existent register")
+	}
+	_, err = r.Read(255)
+	if err == nil {
+		t.Errorf("Expected error when writing to non-existent register")
+	}
 }
