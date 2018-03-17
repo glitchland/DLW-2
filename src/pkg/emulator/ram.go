@@ -13,14 +13,17 @@ type RamMem struct {
 
 func (r *RamMem) Init() {
 	r.Top = uint8(RamAddrLimits - 1)
-	r.ram.Init(RamAddrLimits)
-	r.ram.Zero8()
+	r.ram.Init8(RamAddrLimits)
 }
 
 func (r *RamMem) ToStr() string {
 	s := ""
 	for i := 1; i <= RamAddrLimits; i++ {
-		s += fmt.Sprintf("%02X ", r.ram.GetByteAt(uint8(i-1)))
+		v, e := r.ram.GetByteAt(uint8(i - 1))
+		if e != nil {
+			panic("Unable to read memory")
+		}
+		s += fmt.Sprintf("%02X ", v)
 		if i%16 == 0 {
 			s += fmt.Sprintf("\n")
 		}
@@ -28,10 +31,13 @@ func (r *RamMem) ToStr() string {
 	return s
 }
 
+//XXX check errors
 func (r *RamMem) Write(addr uint8, v uint8) {
-	r.ram.SetByteAt(uint8(addr), v)
+	_ = r.ram.SetByteAt(uint8(addr), v)
 }
 
+//XXX check errors
 func (r *RamMem) Read(addr uint8) uint8 {
-	return r.ram.GetByteAt(uint8(addr))
+	v, _ := r.ram.GetByteAt(uint8(addr))
+	return v
 }

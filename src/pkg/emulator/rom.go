@@ -13,8 +13,7 @@ type RomMem struct {
 
 func (r *RomMem) Init(opcodes []uint16) {
 	r.Top = (RomAddrLimits - 1)
-	r.rom.Init(RomAddrLimits)
-	r.rom.Zero16()
+	r.rom.Init16(RomAddrLimits)
 	r.Load(opcodes)
 }
 
@@ -30,7 +29,11 @@ func (r *RomMem) Load(opcodes []uint16) {
 func (r *RomMem) ToStr() string {
 	s := ""
 	for i := 1; i <= RomAddrLimits; i++ {
-		s += fmt.Sprintf("%04X ", r.rom.GetWordAt(uint8(i-1)))
+		v, e := r.rom.GetWordAt(uint8(i - 1))
+		if e != nil {
+			panic("Unable to read memory")
+		}
+		s += fmt.Sprintf("%04X ", v)
 		if i%16 == 0 {
 			s += fmt.Sprintf("\n")
 		}
@@ -38,10 +41,13 @@ func (r *RomMem) ToStr() string {
 	return s
 }
 
+//XXX check errors
 func (r *RomMem) Write(addr uint8, v uint16) {
-	r.rom.SetWordAt(uint8(addr), v)
+	_ = r.rom.SetWordAt(uint8(addr), v)
 }
 
+//XXX check errors
 func (r *RomMem) Read(addr uint8) uint16 {
-	return r.rom.GetWordAt(uint8(addr))
+	v, _ := r.rom.GetWordAt(uint8(addr))
+	return v
 }
