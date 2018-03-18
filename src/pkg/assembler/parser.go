@@ -1,9 +1,7 @@
 package asm
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	s "pkg/shared"
 	"regexp"
 	"strconv"
@@ -315,17 +313,8 @@ func HandleBranchOperation(branchType uint64, labelOffsets map[string]uint8, cur
 	return opcode, err
 }
 
-func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, error) {
+func ParseLines(asmLines []string) ([]uint16, error) {
 
-	inputFile, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer inputFile.Close()
-
-	/*
-	 * Regular expressions for initial parser.
-	 */
 	var add = regexp.MustCompile(`(?i)add`)
 	var sub = regexp.MustCompile(`(?i)sub`)
 	var load = regexp.MustCompile(`(?i)load`)
@@ -342,22 +331,17 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 
 	// first run a pass to detect tags, make a map of tags -> line number
 	// this will become index into array of words
-	firstPassScanner := bufio.NewScanner(inputFile)
-	for firstPassScanner.Scan() {
-		if output, _e := parse(firstPassScanner.Text()); _e {
-			if label.MatchString(output) {
-				tag := strings.Split(output, ":")[0]
-				labelOffsets[tag] = lineNumber
-			}
-			lineNumber++
+	for _, l := range asmLines {
+		if label.MatchString(l) {
+			tag := strings.Split(l, ":")[0]
+			labelOffsets[tag] = lineNumber
 		}
+		lineNumber++
 	}
 
 	// now run a second pass to build the set of instructions
-	inputFile.Seek(0, 0) // rewind the file pointer
-	secondPassScanner := bufio.NewScanner(inputFile)
 	lineNumber = 0 // reuse this counter
-	for secondPassScanner.Scan() {
+	for _, line := range asmLines {
 
 		/*
 		 * for each line, detect what it is
@@ -367,73 +351,64 @@ func ParseLines(filePath string, parse func(string) (string, bool)) ([]uint16, e
 		 * handle invalid lines, abort with desriptive message
 		 */
 
-		if output, _e := parse(secondPassScanner.Text()); _e {
+		// first check if this is a label
+		switch {
 
-			// first check if this is a label
-
-			//results = append(results, output)
-			switch {
-
-			// is this an add instruction
-			case add.MatchString(output):
-				if opcode, e := HandleArithmetic(s.ADD, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Add [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-
-			case sub.MatchString(output):
-				if opcode, e := HandleArithmetic(s.SUB, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Sub [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-
-			case load.MatchString(output):
-				if opcode, e := HandleMemoryOperation(s.LOAD, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Load [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-
-			case store.MatchString(output):
-				if opcode, e := HandleMemoryOperation(s.STORE, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Store [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-
-			case jump.MatchString(output):
-				if opcode, e := HandleBranchOperation(s.JUMP, labelOffsets, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Jump [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-			case jumpz.MatchString(output):
-				if opcode, e := HandleBranchOperation(s.JUMPZ, labelOffsets, lineNumber, output); e != nil {
-					s.ChkFatalError(e)
-				} else {
-					fmt.Printf("Jumpz [%s] -> |%016b|\n", output, opcode)
-					results = append(results, opcode)
-				}
-			case comment.MatchString(output):
-				// skip these lines
-			default:
-				fmt.Println(output, "is not recognized")
+		// is this an add instruction
+		case add.MatchString(line):
+			if opcode, e := HandleArithmetic(s.ADD, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Add [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
 			}
 
-			lineNumber++
-		}
-	}
+		case sub.MatchString(line):
+			if opcode, e := HandleArithmetic(s.SUB, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Sub [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
+			}
 
-	// XXX refactor this
-	if err := secondPassScanner.Err(); err != nil {
-		return nil, err
+		case load.MatchString(line):
+			if opcode, e := HandleMemoryOperation(s.LOAD, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Load [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
+			}
+
+		case store.MatchString(line):
+			if opcode, e := HandleMemoryOperation(s.STORE, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Store [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
+			}
+
+		case jump.MatchString(line):
+			if opcode, e := HandleBranchOperation(s.JUMP, labelOffsets, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Jump [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
+			}
+		case jumpz.MatchString(line):
+			if opcode, e := HandleBranchOperation(s.JUMPZ, labelOffsets, lineNumber, line); e != nil {
+				s.ChkFatalError(e)
+			} else {
+				fmt.Printf("Jumpz [%s] -> |%016b|\n", line, opcode)
+				results = append(results, opcode)
+			}
+		case comment.MatchString(line):
+			// skip these lines
+		default:
+			fmt.Println(line, "is not recognized")
+		}
+
+		lineNumber++
 	}
+	// XXX return errors
 	return results, nil
 }
