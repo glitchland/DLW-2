@@ -1,8 +1,20 @@
+This is DLW-2, a virtual CPU and an assembler to write and assemble code for the CPU.
 
-``` 
+[![asciicast](https://asciinema.org/a/172228.png)](https://asciinema.org/a/172228)   
+
+#Build 
+
+```
 $ export GOPATH=$(pwd)
-$ go run src/cmd/asm/main.go src/examples/fill_ram_demo.asm 
-$ go run src/cmd/emu/main.go 
+$ go build -o bin/asm src/cmd/asm/main.go 
+$ go build -o bin/emu src/cmd/emu/main.go 
+```
+
+#Examples    
+
+```     
+$ bin/asm -asm src/examples/fill_ram_demo.asm -out rom.bin
+$ bin/emu -rom rom.bin 
 ```
 
 How to run tests:    
