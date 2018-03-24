@@ -41,12 +41,9 @@ go tool cover -html=coverage.out
 
 # TODO   
 
-- Check if this LOAD and STORE works properly in the parser and emulator
-- Revise the rules around the JUMP instruction and the top bit of the source
-  register (and in general clean this up)
-- Implement the status register
-- Write a JUMPZ instruction
 - Handle code comments start and end of line, and relative jumps when there are commented lines
+- Clean up docs, add godocs 
+- Increase test coverage 
 
 # Processor Status Word Register (PSW)
 
